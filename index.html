@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Target Master Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    
+    <meta name="theme-color" content="#6c5ce7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6; --card-bg: #ffffff; --text-color: #2d3436; 
+            --primary: #6c5ce7; --secondary: #00b894; --danger: #ff7675; --warning: #fdcb6e;
+            --nav-bg: #ffffff; --nav-border: #e1e5e8;
+            --modal-bg: rgba(0,0,0,0.4); --modal-content-bg: #ffffff;
+        }
+        [data-theme="dark"] {
+            --bg-color: #121212; --card-bg: #1e1e1e; --text-color: #e9ecef;
+            --primary: #a29bfe; --nav-bg: #1e1e1e; --nav-border: #2c2c2c;
+            --modal-bg: rgba(255,255,255,0.05); --modal-content-bg: #1e1e1e;
+        }
+        
+        html, body { height: 100dvh; margin: 0; padding: 0; overflow: hidden; font-family: 'Poppins', sans-serif; background: var(--bg-color); color: var(--text-color); -webkit-tap-highlight-color: transparent; }
+        .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; max-width: 500px; margin: 0 auto; background: var(--bg-color); position: relative; }
+
+        .screen { flex: 1; display: none; flex-direction: column; overflow: hidden; padding: 20px; animation: fadeIn 0.3s ease; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--nav-border); }
+        h2 { margin: 0; font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .icon-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); padding: 5px; }
+
+        /* Task List Area */
+        .task-container { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .task-container::-webkit-scrollbar { display: none; }
+        
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { background: var(--card-bg); margin-bottom: 12px; padding: 15px; border-radius: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .task-header { display: flex; align-items: center; gap: 12px; }
+        .drag-handle { color: #bbb; cursor: grab; padding-right: 5px; }
+        .task-content { flex: 1; display: flex; flex-direction: column; }
+        .task-title { font-weight: 600; font-size: 0.95rem; }
+        .task-tag { font-size: 0.7rem; opacity: 0.7; font-weight: 600; color: var(--primary); text-transform: uppercase; }
+        .completed .task-title { text-decoration: line-through; opacity: 0.4; }
+        
+        .task-actions { display: flex; gap: 8px; align-items: center; }
+        .action-icon { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 2px; }
+        .play-btn { background: var(--secondary); color: white; border: none; border-radius: 8px; padding: 5px 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        
+        .subtasks-list { padding-left: 35px; border-left: 2px solid var(--nav-border); margin-left: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .subtask-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; opacity: 0.8; }
+        .subtask-item.done { text-decoration: line-through; opacity: 0.4; }
+
+        /* Inputs */
+        .input-group { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+        input, select, textarea { padding: 16px; border-radius: 14px; border: 1px solid var(--nav-border); outline: none; background: var(--card-bg); color: var(--text-color); font-size: 1rem; font-family: inherit; }
+        textarea { resize: none; height: 90px; }
+        .checkbox-container { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; }
+        .checkbox-container input { width: 20px; height: 20px; accent-color: var(--primary); }
+        .btn-main { background: var(--primary); color: white; padding: 16px; border-radius: 14px; font-weight: 600; border: none; font-size: 1rem; margin-top: 5px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.25); cursor: pointer;}
+
+        /* Timer / Stopwatch */
+        .timer-wrapper { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .active-task-label { font-size: 0.9rem; font-weight: 600; color: var(--primary); margin-bottom: 20px; text-align: center; background: var(--card-bg); padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        
+        .mode-toggle { display: flex; background: var(--nav-bg); border-radius: 25px; padding: 5px; margin-bottom: 20px; border: 1px solid var(--nav-border); box-shadow: inset 0 2px 5px rgba(0,0,0,0.02); }
+        .mode-btn { border: none; background: transparent; padding: 10px 25px; border-radius: 20px; cursor: pointer; color: var(--text-color); font-weight: 600; transition: all 0.2s; }
+        .mode-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3); }
+
+        .interval-selectors { display: flex; gap: 8px; margin-bottom: 25px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .interval-btn { padding: 8px 16px; border-radius: 20px; border: 2px solid var(--primary); background: transparent; color: var(--text-color); font-weight: 600; cursor: pointer; }
+        .interval-btn.active { background: var(--primary); color: white; }
+        .custom-time { display: flex; align-items: center; gap: 5px; }
+        .custom-time input { width: 60px; padding: 8px; border-radius: 20px; border: 2px solid var(--primary); text-align: center; font-weight: 600; }
+
+        .circle-timer { width: 250px; height: 250px; border-radius: 50%; border: 8px solid var(--primary); display: flex; justify-content: center; align-items: center; margin-bottom: 40px; position: relative; }
+        .timer-display { font-size: 3.5rem; font-weight: 600; }
+        
+        .timer-controls { display: flex; gap: 20px; }
+        .timer-controls button { padding: 12px 30px; border-radius: 25px; border: none; font-weight: 600; background: var(--card-bg); color: var(--text-color); cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+        #start-timer { background: var(--primary); color: white; margin-left: 10px; }
+
+        /* Stats */
+        .stats-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 100%; text-align: center; margin-bottom: 20px; }
+        .stat-number { font-size: 2.5rem; font-weight: 600; color: var(--primary); }
+        .chart-wrapper { width: 100%; max-width: 300px; margin: 0 auto; }
+
+        /* Bottom Nav */
+        .bottom-nav { display: flex; justify-content: space-around; background: var(--nav-bg); padding: 15px 10px 25px 10px; border-top: 1px solid var(--nav-border); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #888; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 1.4rem; }
+
+        /* MODAL STYLES */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: var(--modal-bg); animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-content { background-color: var(--modal-content-bg); margin: 15% auto; padding: 2rem; border-radius: 24px; width: 85%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid var(--nav-border); position: relative; animation: slideUp 0.5s ease-out; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .close-btn { color: #888; position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: var(--danger); }
+        .modal-title { font-weight: 600; font-size: 1.3rem; margin-top: 1rem; color: var(--text-color); }
+        
+        .dev-badge { border-left: 5px solid var(--warning); background-color: var(--bg-color); padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; margin: 1rem 0; width: 90%; text-align: center; }
+        .dev-text-main { color: var(--danger); font-weight: 600; margin-bottom: 3px; }
+        .dev-text-sub { color: #888; }
+
+        .modal-body-text { font-size: 0.9rem; line-height: 1.6; color: #777; margin: 1rem 0; }
+        .upi-label-text { font-weight: 600; color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
+        .qr-code-img { width: 100%; max-width: 250px; border-radius: 15px; margin: 1rem 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .rockstar-text { font-weight: 600; font-style: italic; color: #444; font-size: 0.95rem; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    
+    <div id="home-screen" class="screen active">
+        <header>
+            <h2>Target Master Pro</h2>
+            <div class="header-actions">
+                <button class="icon-btn" id="export-btn" title="Copy for Channel">📋</button>
+                <button class="icon-btn" id="theme-btn">🌙</button>
+            </div>
+        </header>
+        <div class="task-container">
+            <ul id="task-list"></ul>
+            <div id="empty-state" style="text-align: center; margin-top: 40px; opacity: 0.5;">List is empty. Let's build!</div>
+        </div>
+    </div>
+
+    <div id="add-screen" class="screen">
+        <header><h2 id="add-header">New Target</h2></header>
+        <div class="input-group">
+            <input type="text" id="task-input" placeholder="Main Task (e.g. Chemical Kinetics)">
+            <select id="category-input">
+                <option value="Physics">⚛️ Physics</option>
+                <option value="Chemistry">🧪 Chemistry</option>
+                <option value="Math">📐 Math</option>
+                <option value="Mock Test">📝 Mock Test</option>
+                <option value="Revision">🔄 Revision</option>
+                <option value="Other">📌 Other</option>
+            </select>
+            <textarea id="subtasks-input" placeholder="Sub-tasks (Optional)&#10;Read NCERT&#10;Solve PYQs"></textarea>
+            
+            <label class="checkbox-container">
+                <input type="checkbox" id="repeat-input">
+                🔁 Repeat Daily
+            </label>
+
+            <button class="btn-main" id="add-btn">Add to Plan</button>
+        </div>
+    </div>
+
+    <div id="timer-screen" class="screen">
+        <header><h2>Focus Mode</h2></header>
+        <div class="timer-wrapper">
+            <div id="active-task-display" class="active-task-label" style="display:none;"></div>
+            
+            <div class="mode-toggle">
+                <button id="mode-timer-btn" class="mode-btn active" onclick="setMode('timer')">Timer</button>
+                <button id="mode-stopwatch-btn" class="mode-btn" onclick="setMode('stopwatch')">Stopwatch</button>
+            </div>
+
+            <div class="interval-selectors" id="interval-container">
+                <button class="interval-btn active" onclick="setTimer(25)">25m</button>
+                <button class="interval-btn" onclick="setTimer(50)">50m</button>
+                <div class="custom-time">
+                    <input type="number" id="custom-min" placeholder="Min" min="1">
+                    <button class="interval-btn" onclick="setCustomTimer()">Set</button>
+                </div>
+            </div>
+
+            <div class="circle-timer"><div class="timer-display" id="time-display">25:00</div></div>
+            
+            <div class="timer-controls">
+                <button id="reset-timer">Reset</button>
+                <button id="start-timer">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats-screen" class="screen">
+        <header><h2>Analytics</h2></header>
+        <div class="stats-container">
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; opacity: 0.7;">Tasks Completed</div>
+                <div class="stat-number" id="total-completed-stat">0</div>
+            </div>
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 10px;">Subject Distribution</div>
+                <div class="chart-wrapper"><canvas id="subjectChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home')"><span class="nav-icon">🎯</span><span>Targets</span></div>
+        <div class="nav-item" onclick="switchTab('add')"><span class="nav-icon">➕</span><span>Add</span></div>
+        <div class="nav-item" onclick="switchTab('timer')"><span class="nav-icon">⏱️</span><span>Focus</span></div>
+        <div class="nav-item" onclick="switchTab('stats')"><span class="nav-icon">📊</span><span>Stats</span></div>
+        <div class="nav-item" id="nav-support"><span class="nav-icon">💖</span><span>Support</span></div>
+    </nav>
+
+</div>
+
+<div id="support-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="modal-close">&times;</span>
+        <div class="modal-title">TARGET MASTER PRO</div>
+        <div class="dev-badge">
+            <div class="dev-text-main">Developed by OMM</div>
+            <div class="dev-text-sub">Powered by MaMaLi</div>
+        </div>
+        <p class="modal-body-text">
+            Thank you for using the app! Your support helps keep this tool growing and completely free for students everywhere.
+        </p>
+        <p class="upi-label-text">
+            Scan the QR code below to support via UPI.
+        </p>
+        <img src="./qrcode.png" alt="Support QR Code" class="qr-code-img">
+        <div class="rockstar-text">You are a rockstar! 🌟</div>
+    </div>
+</div>
+
+<script>
+    // System PWA & Audio
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(reg => console.log('SW Registered!')); }); }
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playAlarm() { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 1.5); setTimeout(() => osc.stop(), 1500); }
+
+    // --- System & State ---
+    let tasks = JSON.parse(localStorage.getItem('megaTasks')) || [];
+    let linkedTaskIndex = null;
+    let chartInstance = null;
+    let editingIndex = null;
+
+    function checkDailyReset() { const today = new Date().toDateString(); const lastDate = localStorage.getItem('lastActiveDate'); if (lastDate !== today) { tasks.forEach(task => { if (task.repeat) { task.completed = false; if (task.subtasks) task.subtasks.forEach(s => s.completed = false); } }); localStorage.setItem('lastActiveDate', today); localStorage.setItem('megaTasks', JSON.stringify(tasks)); } }
+    checkDailyReset();
+
+    // --- Navigation & Forms & Modal Handling ---
+    function switchTab(tabName) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById(`${tabName}-screen`).classList.add('active');
+        let navIndex = { 'home': 0, 'add': 1, 'timer': 2, 'stats': 3 }[tabName];
+        document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+        if(tabName === 'add' && event && event.currentTarget.classList.contains('nav-item')) { resetAddForm(); }
+        if(tabName === 'stats') updateStats();
+    }
+    
+    // Modal Interaction
+    const supportModal = document.getElementById('support-modal');
+    document.getElementById('nav-support').addEventListener('click', () => { supportModal.style.display = 'block'; });
+    document.getElementById('modal-close').addEventListener('click', () => { supportModal.style.display = 'none'; });
+    window.addEventListener('click', (event) => { if (event.target == supportModal) { supportModal.style.display = 'none'; } });
+
+    function resetAddForm() { editingIndex = null; document.getElementById('add-header').innerText = "New Target"; document.getElementById('task-input').value = ''; document.getElementById('subtasks-input').value = ''; document.getElementById('repeat-input').checked = false; document.getElementById('add-btn').innerText = "Add to Plan"; }
+
+    // --- Task Engine ---
+    const taskList = document.getElementById('task-list');
+    function renderTasks() { taskList.innerHTML = ''; document.getElementById('empty-state').style.display = tasks.length === 0 ? 'block' : 'none'; tasks.forEach((task, index) => { const li = document.createElement('li'); li.className = task.completed ? 'completed' : ''; let subtasksHTML = ''; if(task.subtasks && task.subtasks.length > 0) { subtasksHTML = '<div class="subtasks-list">'; task.subtasks.forEach((sub, subIdx) => { subtasksHTML += ` <div class="subtask-item ${sub.completed ? 'done' : ''}"> <input type="checkbox" ${sub.completed ? 'checked' : ''} onchange="toggleSubtask(${index}, ${subIdx})"> <span>${sub.text}</span> </div> `; }); subtasksHTML += '</div>'; } li.innerHTML = ` <div class="task-header"> <span class="drag-handle">☰</span> <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${index})" style="width: 22px; height: 22px;"> <div class="task-content"> <span class="task-title">${task.text} ${task.repeat ? '🔁' : ''}</span> <span class="task-tag">${task.category}</span> </div> <div class="task-actions"> <button class="play-btn" onclick="linkTimer(${index})" title="Focus">▶</button> <button class="action-icon" onclick="editTask(${index})" title="Edit">✏️</button> <button class="action-icon" style="color:var(--danger)" onclick="deleteTask(${index})" title="Delete">&times;</button> </div> </div> ${subtasksHTML} `; taskList.appendChild(li); }); localStorage.setItem('megaTasks', JSON.stringify(tasks)); }
+    window.editTask = (i) => { editingIndex = i; const t = tasks[i]; document.getElementById('task-input').value = t.text; document.getElementById('category-input').value = t.category; document.getElementById('repeat-input').checked = t.repeat || false; document.getElementById('subtasks-input').value = t.subtasks ? t.subtasks.map(s=>s.text).join('\n') : ''; document.getElementById('add-header').innerText = "Edit Target"; document.getElementById('add-btn').innerText = "Save Changes"; document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('add-screen').classList.add('active'); document.querySelectorAll('.nav-item')[1].classList.add('active'); };
+    document.getElementById('add-btn').addEventListener('click', () => { const text = document.getElementById('task-input').value.trim(); const category = document.getElementById('category-input').value; const subText = document.getElementById('subtasks-input').value.trim(); const repeat = document.getElementById('repeat-input').checked; if (!text) return; let subtasks = []; if(subText) subtasks = subText.split('\n').filter(s => s.trim() !== '').map(s => ({ text: s.trim(), completed: false })); if (editingIndex !== null) { tasks[editingIndex] = { text, category, completed: tasks[editingIndex].completed, subtasks, repeat }; } else { tasks.push({ text, category, completed: false, subtasks, repeat }); } resetAddForm(); renderTasks(); switchTab('home'); });
+    window.toggleTask = (i) => { tasks[i].completed = !tasks[i].completed; if(tasks[i].completed && tasks[i].subtasks) tasks[i].subtasks.forEach(s => s.completed = true); renderTasks(); };
+    window.toggleSubtask = (tIdx, sIdx) => { tasks[tIdx].subtasks[sIdx].completed = !tasks[tIdx].subtasks[sIdx].completed; tasks[tIdx].completed = tasks[tIdx].subtasks.every(s => s.completed); renderTasks(); };
+    window.deleteTask = (i) => { tasks.splice(i, 1); renderTasks(); };
+    new Sortable(taskList, { handle: '.drag-handle', animation: 150, onEnd: function (evt) { const moved = tasks.splice(evt.oldIndex, 1)[0]; tasks.splice(evt.newIndex, 0, moved); localStorage.setItem('megaTasks', JSON.stringify(tasks)); renderTasks(); } });
+
+    // --- Timer / Stopwatch Engine ---
+    let isStopwatchMode = false; let stopwatchTime = 0; let currentInterval = 25; let timeLeft = currentInterval * 60; let timerId = null; const timeDisplay = document.getElementById('time-display');
+    window.setMode = (mode) => { isStopwatchMode = (mode === 'stopwatch'); document.getElementById('mode-timer-btn').classList.toggle('active', !isStopwatchMode); document.getElementById('mode-stopwatch-btn').classList.toggle('active', isStopwatchMode); document.getElementById('interval-container').style.display = isStopwatchMode ? 'none' : 'flex'; if(timerId) { clearInterval(timerId); timerId = null; document.getElementById('start-timer').innerText = 'Start'; } if(isStopwatchMode) { stopwatchTime = 0; updateDisplayFormat(stopwatchTime); } else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } };
+    window.linkTimer = (index) => { linkedTaskIndex = index; document.getElementById('active-task-display').style.display = 'block'; document.getElementById('active-task-display').innerText = `🎯 Focusing on: ${tasks[index].text}`; switchTab('timer'); };
+    function updateDisplayFormat(totalSeconds) { const hours = Math.floor(totalSeconds / 3600); const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0'); const secs = (totalSeconds % 60).toString().padStart(2, '0'); if(hours > 0) { timeDisplay.innerText = `${hours}:${mins}:${secs}`; timeDisplay.style.fontSize = "2.8rem"; } else { timeDisplay.innerText = `${mins}:${secs}`; timeDisplay.style.fontSize = "3.5rem"; } }
+    window.setTimer = (mins) => { if(timerId) { clearInterval(timerId); timerId = null; document.getElementById('start-timer').innerText = 'Start'; } currentInterval = parseInt(mins); timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); document.querySelectorAll('.interval-btn').forEach(btn => btn.classList.remove('active')); if(event) event.currentTarget.classList.add('active'); document.getElementById('custom-min').value = ''; };
+    window.setCustomTimer = () => { const customMins = document.getElementById('custom-min').value; if(customMins && customMins > 0) { setTimer(customMins); document.querySelectorAll('.interval-btn').forEach(btn => btn.classList.remove('active')); event.currentTarget.classList.add('active'); } }
+    document.getElementById('start-timer').addEventListener('click', function() { if(audioCtx.state === 'suspended') audioCtx.resume(); if (timerId) { clearInterval(timerId); timerId = null; this.innerText = 'Start'; } else { this.innerText = 'Pause'; timerId = setInterval(() => { if (isStopwatchMode) { stopwatchTime++; updateDisplayFormat(stopwatchTime); } else { if (timeLeft > 0) { timeLeft--; updateDisplayFormat(timeLeft); } else { clearInterval(timerId); timerId = null; this.innerText = 'Start'; playAlarm(); if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); linkedTaskIndex = null; document.getElementById('active-task-display').style.display = 'none'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } } }, 1000); } });
+    document.getElementById('reset-timer').addEventListener('click', () => { clearInterval(timerId); timerId = null; document.getElementById('start-timer').innerText = 'Start'; if (isStopwatchMode) { stopwatchTime = 0; updateDisplayFormat(stopwatchTime); } else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } linkedTaskIndex = null; document.getElementById('active-task-display').style.display = 'none'; });
+
+    // --- Stats & Export ---
+    function updateStats() { const completedTasks = tasks.filter(t => t.completed); document.getElementById('total-completed-stat').innerText = completedTasks.length; const counts = { Physics: 0, Chemistry: 0, Math: 0, "Mock Test": 0, Revision: 0, Other: 0 }; completedTasks.forEach(t => { if(counts[t.category] !== undefined) counts[t.category]++; else counts.Other++; }); const ctx = document.getElementById('subjectChart').getContext('2d'); if(chartInstance) chartInstance.destroy(); chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Physics', 'Chemistry', 'Math', 'Mock Test', 'Revision', 'Other'], datasets: [{ data: [counts.Physics, counts.Chemistry, counts.Math, counts['Mock Test'], counts.Revision, counts.Other], backgroundColor: ['#0984e3', '#e84393', '#00b894', '#fdcb6e', '#fab1a0', '#636e72'], borderWidth: 0 }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#fff' : '#333' } } } } }); }
+    document.getElementById('export-btn').addEventListener('click', () => { const date = new Date().toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }); let text = `🎯 Targets | Target Master Pro | ${date}\n\n`; tasks.forEach(task => { const repeatIcon = task.repeat ? '🔁 ' : ''; text += `${task.completed ? '✅' : '⏳'} [${task.category}] ${repeatIcon}${task.text}\n`; if(task.subtasks && task.subtasks.length > 0) { task.subtasks.forEach(sub => { text += ` ${sub.completed ? '✓' : '○'} ${sub.text}\n`; }); } }); text += `\nStudy Progress 💪`; navigator.clipboard.writeText(text).then(() => alert("Copied! Ready to drop in your progress channel.")); });
+    
+    // Theme setup
+    let isDark = localStorage.getItem('mobTheme') === 'dark'; if (isDark) document.body.setAttribute('data-theme', 'dark'); document.getElementById('theme-btn').addEventListener('click', () => { isDark = !isDark; document.body.setAttribute('data-theme', isDark ? 'dark' : 'light'); localStorage.setItem('mobTheme', isDark ? 'dark' : 'light'); if(document.getElementById('stats-screen').classList.contains('active')) updateStats(); });
+
+    // Init
+    renderTasks();
+</script>
+</body>
+</html>
+
