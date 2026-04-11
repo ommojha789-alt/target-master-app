@@ -91,7 +91,11 @@
         .progress-ring__ticks { stroke: rgba(255, 255, 255, 0.15); stroke-width: 10; stroke-dasharray: 2 10; fill: transparent; }
         .progress-ring__path { stroke: url(#gradient); stroke-width: 10; stroke-linecap: round; fill: transparent; transition: stroke-dashoffset 1s linear; }
         
-        .timer-display-large { font-size: clamp(3.5rem, 16vw, 5rem); font-weight: 200; font-family: 'Poppins', sans-serif; color: white; font-variant-numeric: tabular-nums; letter-spacing: 0px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 2; line-height: 1; display: none; }
+        /* --- FIXED: ANTI-VIBRATION DIGIT BOXES --- */
+        .digit { display: inline-block; width: 0.6em; text-align: center; }
+        .colon { display: inline-block; width: 0.25em; text-align: center; transform: translateY(-0.05em); opacity: 0.9;}
+        
+        .timer-display-large { font-size: clamp(3.5rem, 16vw, 5rem); font-weight: 200; font-family: 'Poppins', sans-serif; color: white; letter-spacing: 0px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 2; line-height: 1; display: none; }
 
         .picker-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 180px; width: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -ms-overflow-style: none; -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent); mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent); z-index: 5;}
         .picker-container::-webkit-scrollbar { display: none; }
@@ -124,7 +128,6 @@
         .time-box-val { font-size: 1.4rem; font-weight: 600; color: var(--primary); }
         .main-stat { font-size: 2.5rem; font-weight: 600; color: var(--primary); margin: 5px 0; }
         
-        /* NEW: LEADERBOARD STYLES */
         .lb-list { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 15px; }
         .lb-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 12px 15px; border-radius: 12px; }
         .lb-rank { font-weight: 600; font-size: 0.9rem; color: var(--text-color); display: flex; align-items: center; gap: 8px; }
@@ -169,7 +172,9 @@
         /* FULLSCREEN OVERLAY & LANDSCAPE SETTINGS */
         #fs-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #050505; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
         .fs-close { position: absolute; top: 30px; left: 30px; background: #262626; color: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;}
-        .fs-time { font-size: 25vw; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 4px; font-variant-numeric: tabular-nums; line-height: 1; text-align: center; width: 100%; transition: all 0.3s;}
+        
+        .fs-time { font-size: 25vw; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 0px; line-height: 1; text-align: center; width: 100%; transition: font-size 0.3s ease;}
+        
         .fs-pill { background: #262626; border-radius: 50px; display: flex; padding: 12px; gap: 15px; margin-top: 5vh; transition: all 0.3s;}
         .fs-btn-play { background: #ffffff; color: #000; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.6rem; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-left: 5px; transition: all 0.2s; }
         .fs-btn-play.paused { padding-left: 0; font-size: 1.5rem; } 
@@ -245,7 +250,7 @@
                 </svg>
                 
                 <div class="picker-container" id="minute-picker"></div>
-                <div id="time-display" class="timer-display-large">25:00</div>
+                <div id="time-display" class="timer-display-large"><span class="digit">2</span><span class="digit">5</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
             </div>
 
             <button id="start-timer" class="scenic-play-btn" onclick="handlePlayPause()">▶ Start to Focus</button>
@@ -283,8 +288,7 @@
             <div class="stat-card">
                 <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 5px;">Weekly Leaderboard 🏆</div>
                 <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">Top 3 Focus Days (Resets every Monday)</div>
-                <div id="leaderboard-list" class="lb-list">
-                    </div>
+                <div id="leaderboard-list" class="lb-list"></div>
             </div>
 
             <div class="stat-card" style="padding: 20px 15px;">
@@ -334,7 +338,7 @@
 
 <div id="fs-overlay">
     <button class="fs-close" onclick="closeFullscreen()">✖</button>
-    <div class="fs-time" id="fs-time-display">25:00</div>
+    <div class="fs-time" id="fs-time-display"><span class="digit">2</span><span class="digit">5</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
     <div class="fs-pill"><button class="fs-btn-play" id="fs-play-btn" onclick="handlePlayPause()">▶</button><button class="fs-btn-stop" onclick="handleReset()"><div class="fs-stop-icon"></div></button></div>
 </div>
 
@@ -392,7 +396,6 @@
     function getISTTime() { return new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }); }
     function formatTimeDisplay(secs) { const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60); return `${h}h ${m}m`; }
 
-    // --- NEW: WEEKLY LEADERBOARD ENGINE ---
     function getDaysOfCurrentWeek() {
         const now = new Date();
         const currentDay = now.getDay(); 
@@ -447,7 +450,6 @@
         document.getElementById('stats-yest-time').innerText = formatTimeDisplay(dailyRecords[yest.toLocaleDateString('en-CA')] || 0);
         let weekTotal = 0; for(let i=0; i<7; i++) { let d = new Date(); d.setDate(d.getDate() - i); weekTotal += (dailyRecords[d.toLocaleDateString('en-CA')] || 0); }
         document.getElementById('stats-week-time').innerText = formatTimeDisplay(weekTotal);
-        
         updateLeaderboard(); 
     }
 
@@ -624,10 +626,15 @@
         pill.style.opacity = '1'; pill.innerText = `🎯 Focusing on: ${tasks[index].text}`; switchTab('timer'); 
     };
     
+    // --- FIXED: ANTI-VIBRATION DIGIT BOXING SCRIPT ---
     function updateDisplayFormat(totalSeconds) { 
         const hours = Math.floor(totalSeconds / 3600); const mins = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0'); const secs = (totalSeconds % 60).toString().padStart(2, '0'); 
         let text = hours > 0 ? `${hours}:${mins}:${secs}` : `${mins}:${secs}`;
-        timeDisplay.innerText = text; fsTimeDisplay.innerText = text;
+        
+        // This splits every number into its own invisible HTML box so they can't push each other
+        let html = text.split('').map(c => c === ':' ? `<span class="colon">:</span>` : `<span class="digit">${c}</span>`).join('');
+        
+        timeDisplay.innerHTML = html; fsTimeDisplay.innerHTML = html;
     }
 
     function updateSvgProgress(instant = false) {
@@ -686,7 +693,7 @@
                     
                     dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + delta;
                     if (dailyRecords[todayStr] % 5 === 0) localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
-                    updateAnalyticsDisplay(); // WILL ALSO TRIGGER LIVE LEADERBOARD UPDATE
+                    updateAnalyticsDisplay(); 
 
                     if (isStopwatchMode) { 
                         stopwatchTime += delta; updateDisplayFormat(stopwatchTime); updateSvgProgress(false); 
@@ -750,4 +757,3 @@
 </script>
 </body>
 </html>
-
