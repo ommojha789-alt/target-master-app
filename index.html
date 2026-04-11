@@ -70,7 +70,7 @@
         .checkbox-container input { width: 20px; height: 20px; accent-color: var(--primary); }
         .btn-main { background: var(--primary); color: white; padding: 16px; border-radius: 14px; font-weight: 600; border: none; font-size: 1rem; margin-top: 5px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.25); cursor: pointer; flex-shrink: 0; margin-bottom: 20px;}
 
-        /* --- SCENIC TIMER UI & WHEEL --- */
+        /* SCENIC TIMER UI & WHEEL */
         #timer-screen { padding: 0; background: #050505; }
         .timer-bg {
             width: 100%; height: 100%;
@@ -113,6 +113,7 @@
         .st-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #ccc; font-size: 0.7rem; cursor: pointer; }
         .st-icon { font-size: 1.4rem; color: white; opacity: 0.9;}
 
+        /* STATS */
         .stats-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;}
         .stats-container::-webkit-scrollbar { display: none; }
         .stat-card { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 100%; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); flex-shrink: 0;}
@@ -123,6 +124,12 @@
         .time-box-val { font-size: 1.4rem; font-weight: 600; color: var(--primary); }
         .main-stat { font-size: 2.5rem; font-weight: 600; color: var(--primary); margin: 5px 0; }
         
+        /* NEW: LEADERBOARD STYLES */
+        .lb-list { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 15px; }
+        .lb-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 12px 15px; border-radius: 12px; }
+        .lb-rank { font-weight: 600; font-size: 0.9rem; color: var(--text-color); display: flex; align-items: center; gap: 8px; }
+        .lb-time { font-weight: 600; font-size: 0.9rem; color: var(--primary); background: var(--card-bg); padding: 5px 12px; border-radius: 10px;}
+
         .cal-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; text-align: left;}
         .cal-title { font-weight: 600; font-size: 1rem; color: var(--text-color);}
         .cal-goal-badge { background: rgba(255, 107, 129, 0.1); color: #ff4757; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
@@ -169,7 +176,6 @@
         .fs-btn-stop { background: #3d3d3d; border: none; border-radius: 50%; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
         .fs-stop-icon { width: 18px; height: 18px; background-color: #ff8c00; border-radius: 3px; }
         
-        /* NEW: LANDSCAPE OVERRIDES */
         @media (orientation: landscape) { 
             .fs-time { font-size: 55vh; } 
             .fs-pill { padding: 6px; gap: 10px; margin-top: 2vh; }
@@ -274,9 +280,17 @@
                 </div>
             </div>
 
+            <div class="stat-card">
+                <div style="font-size: 0.9rem; opacity: 0.7; margin-bottom: 5px;">Weekly Leaderboard 🏆</div>
+                <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">Top 3 Focus Days (Resets every Monday)</div>
+                <div id="leaderboard-list" class="lb-list">
+                    </div>
+            </div>
+
             <div class="stat-card" style="padding: 20px 15px;">
                 <div class="cal-header-row"><div class="cal-title">Focus Time Goal</div><div class="cal-goal-badge">Goal: 3H</div></div>
                 <div class="cal-stats-text">Focus Days: <span id="cal-focus-days" style="color:var(--text-color); font-weight:600;">0</span> days, Completed Goal Days: <span id="cal-goal-days" style="color:var(--text-color); font-weight:600;">0</span> days<br>Goal Completion Rate: <span id="cal-rate" style="color:var(--text-color); font-weight:600;">0%</span></div>
+                <p style="font-size: 0.7rem; color: #888; margin: 0 0 10px 0; text-align: left;">Tap any date to see study hours.</p>
                 <div class="cal-nav"><button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button><div class="cal-month-title" id="cal-month-year">Apr 2026</div><button class="cal-nav-btn" onclick="changeMonth(1)">›</button></div>
                 <div class="cal-grid" id="cal-grid"></div>
             </div>
@@ -300,10 +314,21 @@
 
 <div id="cat-modal" class="modal">
     <div class="modal-content">
-        <span class="close-btn" onclick="document.getElementById('cat-modal').style.display='none'">&times;</span>
+        <span class="close-btn" id="cat-close">&times;</span>
         <h3 style="margin-top: 0; color: var(--text-color);">Manage Titles</h3>
         <p style="font-size: 0.8rem; color: #888;">Delete ANY title from your dropdown list.</p>
         <div id="custom-cat-list" class="cat-list-container"></div>
+    </div>
+</div>
+
+<div id="detail-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="detail-close">&times;</span>
+        <h3 id="detail-date-title" style="margin-top: 0; color: var(--text-color);">Date Detail</h3>
+        <div class="stat-card" style="background:var(--bg-color);">
+            <div style="font-size: 0.8rem; color: #888; text-transform: uppercase;">Focus Time</div>
+            <div class="main-stat" id="detail-time-value" style="font-size: 2.5rem; margin-top: 5px;">0h 0m</div>
+        </div>
     </div>
 </div>
 
@@ -367,6 +392,53 @@
     function getISTTime() { return new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }); }
     function formatTimeDisplay(secs) { const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60); return `${h}h ${m}m`; }
 
+    // --- NEW: WEEKLY LEADERBOARD ENGINE ---
+    function getDaysOfCurrentWeek() {
+        const now = new Date();
+        const currentDay = now.getDay(); 
+        const diffToMonday = currentDay === 0 ? 6 : currentDay - 1; 
+        let weekDates = [];
+        for(let i=0; i<7; i++) {
+            let d = new Date(now);
+            d.setDate(now.getDate() - diffToMonday + i);
+            weekDates.push(d.toLocaleDateString('en-CA'));
+        }
+        return weekDates; 
+    }
+
+    function updateLeaderboard() {
+        const weekDates = getDaysOfCurrentWeek();
+        let weekData = [];
+        weekDates.forEach(dateStr => {
+            if(dailyRecords[dateStr] && dailyRecords[dateStr] > 0) {
+                weekData.push({ date: dateStr, secs: dailyRecords[dateStr] });
+            }
+        });
+        
+        weekData.sort((a, b) => b.secs - a.secs);
+        const top3 = weekData.slice(0, 3);
+        const container = document.getElementById('leaderboard-list');
+        container.innerHTML = '';
+        
+        if(top3.length === 0) {
+            container.innerHTML = '<div style="opacity:0.5; font-size:0.85rem; text-align:center;">No study data yet this week.</div>';
+            return;
+        }
+
+        const medals = ['🥇', '🥈', '🥉'];
+        top3.forEach((item, index) => {
+            const dateObj = new Date(item.date);
+            const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+            const timeStr = formatTimeDisplay(item.secs);
+            container.innerHTML += `
+                <div class="lb-item">
+                    <div class="lb-rank">${medals[index]} ${dayName}</div>
+                    <div class="lb-time">${timeStr}</div>
+                </div>
+            `;
+        });
+    }
+
     function updateAnalyticsDisplay() {
         const todaySecs = dailyRecords[todayStr] || 0;
         document.getElementById('home-time-badge').innerText = `⏱️ Today: ${formatTimeDisplay(todaySecs)}`;
@@ -375,6 +447,8 @@
         document.getElementById('stats-yest-time').innerText = formatTimeDisplay(dailyRecords[yest.toLocaleDateString('en-CA')] || 0);
         let weekTotal = 0; for(let i=0; i<7; i++) { let d = new Date(); d.setDate(d.getDate() - i); weekTotal += (dailyRecords[d.toLocaleDateString('en-CA')] || 0); }
         document.getElementById('stats-week-time').innerText = formatTimeDisplay(weekTotal);
+        
+        updateLeaderboard(); 
     }
 
     function renderCalendar() {
@@ -391,8 +465,10 @@
             if (secs > 0) {
                 focusDays++; if (secs >= DAILY_GOAL_SECONDS) goalDays++;
                 let pct = Math.min(100, (secs / DAILY_GOAL_SECONDS) * 100);
-                daysHtml += `<div class="cal-cell ${isToday}"><div class="cal-ring" style="background: conic-gradient(#ff4757 ${pct}%, transparent 0);"></div><div class="cal-ring-inner"></div><span class="cal-date">${i}</span></div>`;
-            } else { daysHtml += `<div class="cal-cell ${isToday}"><span class="cal-date">${i}</span></div>`; }
+                daysHtml += `<div class="cal-cell ${isToday}" onclick="showDailyDetail('${dStr}')" style="cursor:pointer;"><div class="cal-ring" style="background: conic-gradient(#ff4757 ${pct}%, transparent 0);"></div><div class="cal-ring-inner"></div><span class="cal-date">${i}</span></div>`;
+            } else { 
+                daysHtml += `<div class="cal-cell ${isToday}" onclick="showDailyDetail('${dStr}')" style="cursor:pointer;"><span class="cal-date">${i}</span></div>`; 
+            }
         }
         const totalCells = startDay + daysInMonth; const remaining = (Math.ceil(totalCells / 7) * 7) - totalCells;
         for(let i = 1; i <= remaining; i++) { daysHtml += `<div class="cal-cell empty"><span class="cal-date">${i}</span></div>`; }
@@ -403,6 +479,17 @@
         document.getElementById('cal-rate').innerText = rate + '%'; document.getElementById('cal-grid').innerHTML = daysHtml;
     }
     window.changeMonth = (dir) => { currentCalDate.setMonth(currentCalDate.getMonth() + dir); renderCalendar(); }
+
+    window.showDailyDetail = (dateStr) => {
+        const detailModal = document.getElementById('detail-modal');
+        const totalSecs = dailyRecords[dateStr] || 0;
+        const timeStr = formatTimeDisplay(totalSecs);
+        const dateObj = new Date(dateStr);
+        const formattedDate = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+        document.getElementById('detail-date-title').innerText = formattedDate;
+        document.getElementById('detail-time-value').innerText = timeStr;
+        detailModal.style.display = 'flex';
+    };
 
     function renderHistory() {
         const container = document.getElementById('history-container'); container.innerHTML = '';
@@ -480,7 +567,7 @@
     const timeDisplay = document.getElementById('time-display'); const fsTimeDisplay = document.getElementById('fs-time-display');
     const pickerContainer = document.getElementById('minute-picker');
     const progressPath = document.getElementById('progress-path');
-    const circumference = 2 * Math.PI * 140; // 879.64
+    const circumference = 2 * Math.PI * 140; 
 
     function initPicker() {
         let html = '<div class="picker-spacer"></div>';
@@ -496,7 +583,7 @@
                     if (!timerId && !isStopwatchMode) { 
                         currentInterval = parseInt(el.getAttribute('data-val'));
                         timeLeft = currentInterval * 60;
-                        updateSvgProgress();
+                        updateSvgProgress(true);
                     }
                 } else { el.classList.remove('active'); }
             });
@@ -529,7 +616,7 @@
         if(timerId) { handleReset(); } 
         if(isStopwatchMode) { stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); } 
         else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } 
-        updateSvgProgress(); updateTimerUIState();
+        updateSvgProgress(true); updateTimerUIState();
     };
 
     window.linkTimer = (index) => { 
@@ -543,10 +630,17 @@
         timeDisplay.innerText = text; fsTimeDisplay.innerText = text;
     }
 
-    function updateSvgProgress() {
+    function updateSvgProgress(instant = false) {
+        if (instant) {
+            progressPath.style.transition = 'none';
+        } else {
+            progressPath.style.transition = 'stroke-dashoffset 1s linear';
+        }
+        
         if(isStopwatchMode) {
             let pct = (stopwatchTime % 60) / 60;
-            progressPath.style.strokeDashoffset = circumference - (pct * circumference);
+            if (pct === 0 && stopwatchTime > 0 && !instant) { progressPath.style.transition = 'none'; }
+            progressPath.style.strokeDashoffset = circumference - ((stopwatchTime / 60) * circumference);
         } else {
             let pct = timeLeft / (currentInterval * 60);
             progressPath.style.strokeDashoffset = circumference - (pct * circumference);
@@ -556,11 +650,9 @@
     window.setCustomStopwatch = () => {
         if(timerId) { handleReset(); }
         let h = parseInt(document.getElementById('sw-h').value) || 0; let m = parseInt(document.getElementById('sw-m').value) || 0; let s = parseInt(document.getElementById('sw-s').value) || 0;
-        customStopwatchStart = (h * 3600) + (m * 60) + s; stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); updateSvgProgress(); updateTimerUIState();
+        customStopwatchStart = (h * 3600) + (m * 60) + s; stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); updateSvgProgress(true); updateTimerUIState();
         document.getElementById('sw-h').value = ''; document.getElementById('sw-m').value = ''; document.getElementById('sw-s').value = '';
     };
-
-    function incrementDailyTime() { dailyRecords[todayStr]++; if (dailyRecords[todayStr] % 5 === 0) localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); updateAnalyticsDisplay(); }
 
     function recordSession() {
         if (!sessionStartTime) return; const endTime = new Date(); const durationSecs = Math.round((endTime - sessionStartTime) / 1000);
@@ -581,21 +673,37 @@
         } else { 
             fsBtn.innerHTML = '⏸'; fsBtn.classList.add('paused'); sessionStartTime = new Date(); 
             if(!isStopwatchMode && timeLeft === currentInterval * 60) { updateDisplayFormat(timeLeft); }
+            updateSvgProgress(true);
+            
+            let lastTick = Date.now();
             
             timerId = setInterval(() => { 
-                if (isStopwatchMode) { 
-                    stopwatchTime++; incrementDailyTime(); updateDisplayFormat(stopwatchTime); updateSvgProgress(); 
-                } else { 
-                    if (timeLeft > 0) { 
-                        timeLeft--; incrementDailyTime(); updateDisplayFormat(timeLeft); updateSvgProgress(); 
+                let now = Date.now();
+                let delta = Math.floor((now - lastTick) / 1000); 
+                
+                if (delta >= 1) {
+                    lastTick += delta * 1000;
+                    
+                    dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + delta;
+                    if (dailyRecords[todayStr] % 5 === 0) localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
+                    updateAnalyticsDisplay(); // WILL ALSO TRIGGER LIVE LEADERBOARD UPDATE
+
+                    if (isStopwatchMode) { 
+                        stopwatchTime += delta; updateDisplayFormat(stopwatchTime); updateSvgProgress(false); 
                     } else { 
-                        clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); playAlarm(); 
-                        localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); recordSession(); renderCalendar();
-                        if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); 
-                        linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(); updateTimerUIState();
+                        timeLeft -= delta; 
+                        if (timeLeft <= 0) { 
+                            timeLeft = 0;
+                            clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); playAlarm(); 
+                            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); recordSession(); renderCalendar();
+                            if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); 
+                            linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); updateTimerUIState();
+                        } else {
+                            updateDisplayFormat(timeLeft); updateSvgProgress(false); 
+                        }
                     } 
-                } 
-            }, 1000); 
+                }
+            }, 250); 
             updateTimerUIState();
         } 
     };
@@ -604,7 +712,7 @@
         if(timerId) { clearInterval(timerId); timerId = null; const fsBtn = document.getElementById('fs-play-btn'); fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); recordSession(); renderCalendar(); }
         if (isStopwatchMode) { stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); } 
         else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } 
-        updateSvgProgress(); linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; updateTimerUIState();
+        updateSvgProgress(true); linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; updateTimerUIState();
     };
     
     updateTimerUIState();
@@ -628,6 +736,15 @@
     });
     
     let isDark = localStorage.getItem('mobTheme') === 'dark'; if (isDark) document.body.setAttribute('data-theme', 'dark'); document.getElementById('theme-btn').addEventListener('click', () => { isDark = !isDark; document.body.setAttribute('data-theme', isDark ? 'dark' : 'light'); localStorage.setItem('mobTheme', isDark ? 'dark' : 'light'); if(document.getElementById('stats-screen').classList.contains('active')) updateStats(); });
+
+    document.getElementById('cat-close').onclick = () => { document.getElementById('cat-modal').style.display = 'none'; };
+    document.getElementById('detail-close').onclick = () => { document.getElementById('detail-modal').style.display = 'none'; };
+    window.onclick = function(event) {
+        const catModal = document.getElementById('cat-modal');
+        const detailModal = document.getElementById('detail-modal');
+        if (event.target === catModal) { catModal.style.display = 'none'; }
+        if (event.target === detailModal) { detailModal.style.display = 'none'; }
+    }
 
     renderTasks();
 </script>
