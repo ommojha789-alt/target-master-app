@@ -172,28 +172,31 @@
         .cat-list-item { display: flex; justify-content: space-between; padding: 12px; background: var(--bg-color); margin-bottom: 8px; border-radius: 10px; align-items: center; font-weight: 600; font-size: 0.9rem;}
         .del-btn { background: #ff7675; color: white; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem;}
 
-        /* FULLSCREEN OVERLAY & LANDSCAPE SETTINGS (OPTIMIZED FOR OLED BATTERY) */
-        #fs-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
-        .fs-close { position: absolute; top: 30px; left: 30px; background: #262626; color: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;}
+        /* FULLSCREEN OVERLAY & FAKE LANDSCAPE FORCED ROTATION */
+        #fs-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 9999; overflow: hidden; }
         
-        .fs-time { font-size: 25vw; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 0px; line-height: 1; text-align: center; width: 100%; transition: font-size 0.3s ease; white-space: nowrap; display: flex; justify-content: center; align-items: center;}
-        .fs-time.long-format { font-size: 18vw; }
+        .fs-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         
-        .fs-pill { background: #262626; border-radius: 50px; display: flex; padding: 12px; gap: 15px; margin-top: 5vh; transition: all 0.3s;}
-        .fs-btn-play { background: #ffffff; color: #000; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.6rem; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-left: 5px; transition: all 0.2s; }
-        .fs-btn-play.paused { padding-left: 0; font-size: 1.5rem; } 
-        .fs-btn-stop { background: #3d3d3d; border: none; border-radius: 50%; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
-        .fs-stop-icon { width: 18px; height: 18px; background-color: #ff8c00; border-radius: 3px; }
+        .fs-close { position: absolute; top: 15px; left: 15px; background: #262626; color: #fff; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10001;}
         
-        @media (orientation: landscape) { 
-            .fs-time { font-size: 55vh; } 
-            .fs-time.long-format { font-size: min(45vh, 18vw); }
-            .fs-pill { padding: 6px; gap: 10px; margin-top: 2vh; }
-            .fs-btn-play { width: 40px; height: 40px; font-size: 1.2rem; }
-            .fs-btn-play.paused { font-size: 1.1rem; }
-            .fs-btn-stop { width: 40px; height: 40px; }
-            .fs-stop-icon { width: 12px; height: 12px; }
-            .fs-close { width: 35px; height: 35px; font-size: 1rem; top: 15px; left: 15px; }
+        .fs-time { font-size: 55vh; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 0px; line-height: 1; text-align: center; width: 100%; transition: font-size 0.3s ease; white-space: nowrap; display: flex; justify-content: center; align-items: center;}
+        .fs-time.long-format { font-size: 45vh; }
+        
+        .fs-pill { background: #262626; border-radius: 50px; display: flex; padding: 6px; gap: 10px; margin-top: 2vh; transition: all 0.3s; z-index: 10001;}
+        .fs-btn-play { background: #ffffff; color: #000; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-left: 5px; transition: all 0.2s; }
+        .fs-btn-play.paused { padding-left: 0; font-size: 1.1rem; } 
+        .fs-btn-stop { background: #3d3d3d; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
+        .fs-stop-icon { width: 12px; height: 12px; background-color: #ff8c00; border-radius: 3px; }
+
+        /* THE MAGIC: If the OS gets stuck in portrait, visually force it sideways! */
+        @media (orientation: portrait) {
+            .fs-wrapper {
+                top: 50%; left: 50%; width: 100vh; height: 100vw;
+                transform: translate(-50%, -50%) rotate(90deg);
+            }
+            .fs-time { font-size: 55vw; } 
+            .fs-time.long-format { font-size: 45vw; } 
+            .fs-pill { margin-top: 2vw; }
         }
     </style>
 </head>
@@ -345,9 +348,14 @@
 </div>
 
 <div id="fs-overlay">
-    <button class="fs-close" onclick="closeFullscreen()">✖</button>
-    <div class="fs-time" id="fs-time-display"><span class="digit">2</span><span class="digit">5</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
-    <div class="fs-pill"><button class="fs-btn-play" id="fs-play-btn" onclick="handlePlayPause()">▶</button><button class="fs-btn-stop" onclick="handleReset()"><div class="fs-stop-icon"></div></button></div>
+    <div class="fs-wrapper">
+        <button class="fs-close" onclick="event.stopPropagation(); closeFullscreen()">✖</button>
+        <div class="fs-time" id="fs-time-display"><span class="digit">2</span><span class="digit">5</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
+        <div class="fs-pill">
+            <button class="fs-btn-play" id="fs-play-btn" onclick="event.stopPropagation(); handlePlayPause()">▶</button>
+            <button class="fs-btn-stop" onclick="event.stopPropagation(); handleReset()"><div class="fs-stop-icon"></div></button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -381,10 +389,11 @@
                 }
             }
             
+            // Still attempt native lock, but no worries if it fails, CSS handles the visual rotation!
             const overlay = document.getElementById('fs-overlay');
             if (overlay && overlay.style.display === 'flex') {
                 if (screen.orientation && screen.orientation.lock) { 
-                    screen.orientation.lock('landscape').catch(e => console.log("Orientation lock failed:", e)); 
+                    screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped"));
                 }
             }
         }
@@ -772,13 +781,11 @@
                     dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + delta;
                     if (dailyRecords[todayStr] % 60 === 0) {
                         localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
-                        // Only update heavy DOM stats if the app is visible
                         if (!document.hidden) updateAnalyticsDisplay(); 
                     }
 
                     if (isStopwatchMode) { 
                         stopwatchTime += delta; 
-                        // BATTERY SAVER: Skip UI rendering if app is in background
                         if (!document.hidden) { updateDisplayFormat(stopwatchTime); updateSvgProgress(false); }
                     } else { 
                         timeLeft -= delta; 
@@ -792,7 +799,6 @@
                             if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); 
                             linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); updateTimerUIState();
                         } else {
-                            // BATTERY SAVER: Skip UI rendering if app is in background
                             if (!document.hidden) { updateDisplayFormat(timeLeft); updateSvgProgress(false); }
                         }
                     } 
@@ -812,8 +818,23 @@
     
     updateTimerUIState();
 
-    window.openFullscreen = () => { const overlay = document.getElementById('fs-overlay'); overlay.style.display = 'flex'; if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(e => console.log(e)); } if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => console.log(e)); } };
-    window.closeFullscreen = () => { const overlay = document.getElementById('fs-overlay'); overlay.style.display = 'none'; if (document.fullscreenElement) { document.exitFullscreen().catch(e => console.log(e)); } if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); } };
+    window.openFullscreen = () => { 
+        const overlay = document.getElementById('fs-overlay'); 
+        overlay.style.display = 'block'; 
+        if (document.documentElement.requestFullscreen && !document.fullscreenElement) { 
+            document.documentElement.requestFullscreen().catch(e => console.log(e)); 
+        } 
+        if (screen.orientation && screen.orientation.lock) { 
+            screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped")); 
+        }
+    };
+
+    window.closeFullscreen = () => { 
+        const overlay = document.getElementById('fs-overlay'); 
+        overlay.style.display = 'none'; 
+        if (document.fullscreenElement) { document.exitFullscreen().catch(e => console.log(e)); } 
+        if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); } 
+    };
 
     function updateStats() { 
         const completedTasks = tasks.filter(t => t.completed); document.getElementById('total-completed-stat').innerText = completedTasks.length; 
@@ -845,5 +866,6 @@
 </script>
 </body>
 </html>
+
 
 
