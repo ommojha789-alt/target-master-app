@@ -103,7 +103,7 @@
         .picker-item.active { color: white; font-size: 3.5rem; font-weight: 300; text-shadow: 0 2px 10px rgba(255,255,255,0.3); }
         .picker-spacer { height: 60px; }
 
-        /* NEW: EXPECTED END TIME PREDICTOR */
+        /* EXPECTED END TIME PREDICTOR */
         .expected-end { font-size: 0.9rem; color: #a29bfe; font-weight: 400; letter-spacing: 0.5px; margin-bottom: 20px; text-align: center; height: 20px; transition: opacity 0.3s ease; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
         .scenic-play-btn { background: #ffffff; color: #000000; border: none; border-radius: 40px; padding: 16px 45px; font-size: 1.15rem; font-weight: 600; letter-spacing: 0px; cursor: pointer; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); margin-bottom: 20px; transition: 0.2s; flex-shrink: 0; display: flex; align-items: center; gap: 8px;}
@@ -172,10 +172,13 @@
         .cat-list-item { display: flex; justify-content: space-between; padding: 12px; background: var(--bg-color); margin-bottom: 8px; border-radius: 10px; align-items: center; font-weight: 600; font-size: 0.9rem;}
         .del-btn { background: #ff7675; color: white; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem;}
 
-        /* FULLSCREEN OVERLAY & LANDSCAPE SETTINGS */
-        #fs-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #050505; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
+        /* FULLSCREEN OVERLAY & LANDSCAPE SETTINGS (OPTIMIZED FOR OLED BATTERY) */
+        #fs-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
         .fs-close { position: absolute; top: 30px; left: 30px; background: #262626; color: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: center; align-items: center;}
-        .fs-time { font-size: 25vw; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 0px; line-height: 1; text-align: center; width: 100%; transition: font-size 0.3s ease;}
+        
+        .fs-time { font-size: 25vw; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 0px; line-height: 1; text-align: center; width: 100%; transition: font-size 0.3s ease; white-space: nowrap; display: flex; justify-content: center; align-items: center;}
+        .fs-time.long-format { font-size: 18vw; }
+        
         .fs-pill { background: #262626; border-radius: 50px; display: flex; padding: 12px; gap: 15px; margin-top: 5vh; transition: all 0.3s;}
         .fs-btn-play { background: #ffffff; color: #000; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.6rem; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-left: 5px; transition: all 0.2s; }
         .fs-btn-play.paused { padding-left: 0; font-size: 1.5rem; } 
@@ -184,6 +187,7 @@
         
         @media (orientation: landscape) { 
             .fs-time { font-size: 55vh; } 
+            .fs-time.long-format { font-size: min(45vh, 18vw); }
             .fs-pill { padding: 6px; gap: 10px; margin-top: 2vh; }
             .fs-btn-play { width: 40px; height: 40px; font-size: 1.2rem; }
             .fs-btn-play.paused { font-size: 1.1rem; }
@@ -255,6 +259,7 @@
             </div>
 
             <div id="expected-end-time" class="expected-end">🔔 Ends at --:--</div>
+            <div id="expected-duration" class="expected-end" style="margin-top: -15px; margin-bottom: 25px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s ease;"></div>
 
             <button id="start-timer" class="scenic-play-btn" onclick="handlePlayPause()">▶ Start to Focus</button>
 
@@ -363,8 +368,26 @@
     function releaseWakeLock() {
         if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
     }
+    
+    // Catch-up visuals immediately when user returns from background
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && timerId !== null) { requestWakeLock(); }
+        if (document.visibilityState === 'visible') {
+            if (timerId !== null) { 
+                requestWakeLock(); 
+                if (isStopwatchMode) {
+                    updateDisplayFormat(stopwatchTime); updateSvgProgress(true);
+                } else {
+                    updateDisplayFormat(timeLeft); updateSvgProgress(true);
+                }
+            }
+            
+            const overlay = document.getElementById('fs-overlay');
+            if (overlay && overlay.style.display === 'flex') {
+                if (screen.orientation && screen.orientation.lock) { 
+                    screen.orientation.lock('landscape').catch(e => console.log("Orientation lock failed:", e)); 
+                }
+            }
+        }
     });
 
     let tasks = JSON.parse(localStorage.getItem('megaTasks')) || [];
@@ -593,7 +616,7 @@
 
     function initPicker() {
         let html = '<div class="picker-spacer"></div>';
-        for(let i=1; i<=180; i++) { html += `<div class="picker-item" data-val="${i}">${String(i).padStart(2, '0')}:00</div>`; }
+        for(let i=1; i<=600; i++) { html += `<div class="picker-item" data-val="${i}">${String(i).padStart(2, '0')}:00</div>`; }
         html += '<div class="picker-spacer"></div>';
         pickerContainer.innerHTML = html;
 
@@ -654,8 +677,15 @@
         let html = text.split('').map(c => c === ':' ? `<span class="colon">:</span>` : `<span class="digit">${c}</span>`).join('');
         timeDisplay.innerHTML = html; fsTimeDisplay.innerHTML = html;
 
-        // --- NEW: EXPECTED END TIME PREDICTOR ---
+        if (text.length >= 8) {
+            fsTimeDisplay.classList.add('long-format');
+        } else {
+            fsTimeDisplay.classList.remove('long-format');
+        }
+
+        // --- EXPECTED END TIME PREDICTOR ---
         const endEl = document.getElementById('expected-end-time');
+        const durEl = document.getElementById('expected-duration');
         if (endEl) {
             if (!isStopwatchMode && totalSeconds > 0) {
                 let d = new Date();
@@ -663,15 +693,22 @@
                 let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 endEl.innerText = `🔔 Ends at ${timeStr}`;
                 endEl.style.opacity = '1';
+                
+                if (durEl) {
+                    let durStr = hours > 0 ? `${hours} hr ${mins} min` : `${mins} min`;
+                    durEl.innerText = `⏳ Total Time: ${durStr}`;
+                    durEl.style.opacity = '0.8';
+                }
             } else {
                 endEl.style.opacity = '0';
+                if(durEl) durEl.style.opacity = '0';
             }
         }
     }
 
     // Keep the "Ends at" predictor totally accurate even when just staring at the screen idly
     setInterval(() => {
-        if (!timerId && !isStopwatchMode) {
+        if (!timerId && !isStopwatchMode && !document.hidden) {
             updateDisplayFormat(timeLeft);
         }
     }, 1000);
@@ -733,26 +770,34 @@
                     lastTick += delta * 1000;
                     
                     dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + delta;
-                    if (dailyRecords[todayStr] % 5 === 0) localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
-                    updateAnalyticsDisplay(); 
+                    if (dailyRecords[todayStr] % 60 === 0) {
+                        localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
+                        // Only update heavy DOM stats if the app is visible
+                        if (!document.hidden) updateAnalyticsDisplay(); 
+                    }
 
                     if (isStopwatchMode) { 
-                        stopwatchTime += delta; updateDisplayFormat(stopwatchTime); updateSvgProgress(false); 
+                        stopwatchTime += delta; 
+                        // BATTERY SAVER: Skip UI rendering if app is in background
+                        if (!document.hidden) { updateDisplayFormat(stopwatchTime); updateSvgProgress(false); }
                     } else { 
                         timeLeft -= delta; 
                         if (timeLeft <= 0) { 
                             timeLeft = 0;
                             releaseWakeLock(); 
                             clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); playAlarm(); 
-                            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); recordSession(); renderCalendar();
+                            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); 
+                            if (!document.hidden) updateAnalyticsDisplay(); 
+                            recordSession(); renderCalendar();
                             if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); 
                             linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); updateTimerUIState();
                         } else {
-                            updateDisplayFormat(timeLeft); updateSvgProgress(false); 
+                            // BATTERY SAVER: Skip UI rendering if app is in background
+                            if (!document.hidden) { updateDisplayFormat(timeLeft); updateSvgProgress(false); }
                         }
                     } 
                 }
-            }, 250); 
+            }, 1000); 
             updateTimerUIState();
         } 
     };
@@ -800,4 +845,5 @@
 </script>
 </body>
 </html>
+
 
