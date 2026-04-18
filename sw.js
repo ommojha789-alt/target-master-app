@@ -1,4 +1,4 @@
-const cacheName = 'focus-v12'; 
+const cacheName = 'focus-v13'; 
 const assets = [
   './index.html',
   './manifest.json'
