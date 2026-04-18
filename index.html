@@ -376,28 +376,6 @@
     function releaseWakeLock() {
         if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
     }
-    
-    // Catch-up visuals immediately when user returns from background
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            if (timerId !== null) { 
-                requestWakeLock(); 
-                if (isStopwatchMode) {
-                    updateDisplayFormat(stopwatchTime); updateSvgProgress(true);
-                } else {
-                    updateDisplayFormat(timeLeft); updateSvgProgress(true);
-                }
-            }
-            
-            // Still attempt native lock, but no worries if it fails, CSS handles the visual rotation!
-            const overlay = document.getElementById('fs-overlay');
-            if (overlay && overlay.style.display === 'flex') {
-                if (screen.orientation && screen.orientation.lock) { 
-                    screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped"));
-                }
-            }
-        }
-    });
 
     let tasks = JSON.parse(localStorage.getItem('megaTasks')) || [];
     let userCategories = JSON.parse(localStorage.getItem('userCategories'));
@@ -412,6 +390,41 @@
     let todayStr = new Date().toLocaleDateString('en-CA'); 
     if(!dailyRecords[todayStr]) dailyRecords[todayStr] = 0;
     let sessionStartTime = null; let currentCalDate = new Date(); const DAILY_GOAL_SECONDS = 3 * 3600;
+
+    // ----- NEW: STATE SAVING LOGIC -----
+    let isStopwatchMode = false; let stopwatchTime = 0; let currentInterval = 25; let timeLeft = currentInterval * 60; let timerId = null; let customStopwatchStart = 0; 
+    
+    function saveTimerState() {
+        const state = {
+            isRunning: timerId !== null,
+            isStopwatchMode: isStopwatchMode,
+            timeLeft: timeLeft,
+            stopwatchTime: stopwatchTime,
+            currentInterval: currentInterval,
+            lastTick: Date.now(), 
+            linkedTaskIndex: linkedTaskIndex,
+            sessionStartTime: sessionStartTime ? sessionStartTime.getTime() : null
+        };
+        localStorage.setItem('timerState', JSON.stringify(state));
+    }
+
+    // Save exact state right before browser clears memory or app is hidden
+    window.addEventListener('beforeunload', saveTimerState);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            if (timerId !== null) saveTimerState();
+        } else if (document.visibilityState === 'visible') {
+            if (timerId !== null) { 
+                requestWakeLock(); 
+            }
+            const overlay = document.getElementById('fs-overlay');
+            if (overlay && overlay.style.display === 'flex') {
+                if (screen.orientation && screen.orientation.lock) { 
+                    screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped"));
+                }
+            }
+        }
+    });
 
     function renderCategoryOptions() {
         const select = document.getElementById('category-input');
@@ -617,7 +630,6 @@
     window.deleteTask = (i) => { tasks.splice(i, 1); renderTasks(); };
     new Sortable(taskList, { handle: '.drag-handle', animation: 150, onEnd: function (evt) { const moved = tasks.splice(evt.oldIndex, 1)[0]; tasks.splice(evt.newIndex, 0, moved); localStorage.setItem('megaTasks', JSON.stringify(tasks)); renderTasks(); } });
 
-    let isStopwatchMode = false; let stopwatchTime = 0; let currentInterval = 25; let timeLeft = currentInterval * 60; let timerId = null; let customStopwatchStart = 0; 
     const timeDisplay = document.getElementById('time-display'); const fsTimeDisplay = document.getElementById('fs-time-display');
     const pickerContainer = document.getElementById('minute-picker');
     const progressPath = document.getElementById('progress-path');
@@ -639,6 +651,7 @@
                         timeLeft = currentInterval * 60;
                         updateSvgProgress(true);
                         updateDisplayFormat(timeLeft);
+                        saveTimerState(); 
                     }
                 } else { el.classList.remove('active'); }
             });
@@ -672,11 +685,13 @@
         if(isStopwatchMode) { stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); } 
         else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } 
         updateSvgProgress(true); updateTimerUIState();
+        saveTimerState();
     };
 
     window.linkTimer = (index) => { 
         linkedTaskIndex = index; const pill = document.getElementById('active-task-display');
         pill.style.opacity = '1'; pill.innerText = `🎯 Focusing on: ${tasks[index].text}`; switchTab('timer'); 
+        saveTimerState();
     };
     
     function updateDisplayFormat(totalSeconds) { 
@@ -692,7 +707,6 @@
             fsTimeDisplay.classList.remove('long-format');
         }
 
-        // --- EXPECTED END TIME PREDICTOR ---
         const endEl = document.getElementById('expected-end-time');
         const durEl = document.getElementById('expected-duration');
         if (endEl) {
@@ -715,7 +729,6 @@
         }
     }
 
-    // Keep the "Ends at" predictor totally accurate even when just staring at the screen idly
     setInterval(() => {
         if (!timerId && !isStopwatchMode && !document.hidden) {
             updateDisplayFormat(timeLeft);
@@ -744,6 +757,7 @@
         let h = parseInt(document.getElementById('sw-h').value) || 0; let m = parseInt(document.getElementById('sw-m').value) || 0; let s = parseInt(document.getElementById('sw-s').value) || 0;
         customStopwatchStart = (h * 3600) + (m * 60) + s; stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); updateSvgProgress(true); updateTimerUIState();
         document.getElementById('sw-h').value = ''; document.getElementById('sw-m').value = ''; document.getElementById('sw-s').value = '';
+        saveTimerState();
     };
 
     function recordSession() {
@@ -755,7 +769,8 @@
         sessionStartTime = null; 
     }
 
-    window.handlePlayPause = () => {
+    window.handlePlayPause = (isResuming = false) => {
+        if (typeof isResuming !== 'boolean') isResuming = false;
         if(audioCtx.state === 'suspended') audioCtx.resume(); 
         const fsBtn = document.getElementById('fs-play-btn');
 
@@ -763,13 +778,16 @@
             releaseWakeLock();
             clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused');
             localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); recordSession(); renderCalendar(); updateTimerUIState();
+            saveTimerState();
         } else { 
             requestWakeLock();
-            fsBtn.innerHTML = '⏸'; fsBtn.classList.add('paused'); sessionStartTime = new Date(); 
+            fsBtn.innerHTML = '⏸'; fsBtn.classList.add('paused'); 
+            if (!isResuming) sessionStartTime = new Date(); 
             if(!isStopwatchMode && timeLeft === currentInterval * 60) { updateDisplayFormat(timeLeft); }
             updateSvgProgress(true);
             
             let lastTick = Date.now();
+            saveTimerState(); 
             
             timerId = setInterval(() => { 
                 let now = Date.now();
@@ -782,6 +800,11 @@
                     if (dailyRecords[todayStr] % 60 === 0) {
                         localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
                         if (!document.hidden) updateAnalyticsDisplay(); 
+                    }
+
+                    // Save backup state every 10 seconds just in case of sudden crash
+                    if (dailyRecords[todayStr] % 10 === 0) {
+                        saveTimerState();
                     }
 
                     if (isStopwatchMode) { 
@@ -798,6 +821,7 @@
                             recordSession(); renderCalendar();
                             if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); 
                             linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); updateTimerUIState();
+                            saveTimerState();
                         } else {
                             if (!document.hidden) { updateDisplayFormat(timeLeft); updateSvgProgress(false); }
                         }
@@ -814,6 +838,7 @@
         if (isStopwatchMode) { stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); } 
         else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } 
         updateSvgProgress(true); linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; updateTimerUIState();
+        saveTimerState();
     };
     
     updateTimerUIState();
@@ -862,10 +887,80 @@
         if (event.target === detailModal) { detailModal.style.display = 'none'; }
     }
 
+    // ----- NEW: BOOT RECOVERY -----
+    function restoreTimerState() {
+        const savedStr = localStorage.getItem('timerState');
+        if (!savedStr) return;
+        try {
+            const saved = JSON.parse(savedStr);
+            isStopwatchMode = saved.isStopwatchMode;
+            currentInterval = saved.currentInterval;
+            linkedTaskIndex = saved.linkedTaskIndex;
+            if (saved.sessionStartTime) sessionStartTime = new Date(saved.sessionStartTime);
+            
+            document.getElementById('mode-timer-btn').classList.toggle('active', !isStopwatchMode);
+            document.getElementById('mode-stopwatch-btn').classList.toggle('active', isStopwatchMode);
+            document.getElementById('stopwatch-setup-container').style.display = isStopwatchMode ? 'flex' : 'none';
+            
+            if (linkedTaskIndex !== null && tasks[linkedTaskIndex]) {
+                const pill = document.getElementById('active-task-display');
+                pill.style.opacity = '1';
+                pill.innerText = `🎯 Focusing on: ${tasks[linkedTaskIndex].text}`;
+            }
+
+            if (saved.isRunning) {
+                let now = Date.now();
+                let deltaSecs = Math.floor((now - saved.lastTick) / 1000);
+                if (deltaSecs < 0) deltaSecs = 0;
+
+                dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + deltaSecs;
+                localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
+
+                if (isStopwatchMode) {
+                    stopwatchTime = saved.stopwatchTime + deltaSecs;
+                } else {
+                    timeLeft = saved.timeLeft - deltaSecs;
+                    if (timeLeft <= 0) {
+                        timeLeft = 0;
+                        updateDisplayFormat(0);
+                        updateSvgProgress(true);
+                        playAlarm();
+                        if(linkedTaskIndex !== null && tasks[linkedTaskIndex] && !tasks[linkedTaskIndex].completed) { 
+                            if(confirm(`Welcome back! Your session completed while you were away. Did you finish "${tasks[linkedTaskIndex].text}"?`)) { 
+                                tasks[linkedTaskIndex].completed = true; renderTasks(); 
+                            } 
+                        } else alert("Welcome back! Your session completed while you were away.");
+                        linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; 
+                        timeLeft = currentInterval * 60; 
+                        updateDisplayFormat(timeLeft); 
+                        updateSvgProgress(true);
+                        saveTimerState();
+                        updateTimerUIState();
+                        return; 
+                    }
+                }
+                
+                updateDisplayFormat(isStopwatchMode ? stopwatchTime : timeLeft);
+                updateSvgProgress(true);
+                handlePlayPause(true); // resume silently without wiping start time
+            } else {
+                timeLeft = saved.timeLeft;
+                stopwatchTime = saved.stopwatchTime;
+                updateDisplayFormat(isStopwatchMode ? stopwatchTime : timeLeft);
+                updateSvgProgress(true);
+            }
+            updateTimerUIState();
+        } catch (e) {
+            console.error("State restore failed", e);
+        }
+    }
+
     renderTasks();
+    restoreTimerState(); // Run check on boot!
 </script>
 </body>
 </html>
+
 
 
 
