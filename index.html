@@ -27,7 +27,8 @@
             --primary: #a29bfe; --nav-bg: #1e1e1e; --nav-border: #2c2c2c;
         }
         
-        html, body { height: 100dvh; margin: 0; padding: 0; overflow: hidden; font-family: 'Poppins', sans-serif; background: var(--bg-color); color: var(--text-color); -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100vh; height: 100dvh; margin: 0; padding: 0; overflow: hidden; font-family: 'Poppins', sans-serif; background: var(--bg-color); color: var(--text-color); -webkit-tap-highlight-color: transparent; }
+        
         .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; max-width: 500px; margin: 0 auto; background: var(--bg-color); position: relative; }
 
         .screen { flex: 1; display: none; flex-direction: column; overflow: hidden; padding: 20px; animation: fadeIn 0.3s ease; }
@@ -70,32 +71,38 @@
         .checkbox-container input { width: 20px; height: 20px; accent-color: var(--primary); }
         .btn-main { background: var(--primary); color: white; padding: 16px; border-radius: 14px; font-weight: 600; border: none; font-size: 1rem; margin-top: 5px; box-shadow: 0 8px 20px rgba(108, 92, 231, 0.25); cursor: pointer; flex-shrink: 0; margin-bottom: 20px;}
 
-        /* SCENIC TIMER UI & WHEEL */
+        /* SCENIC TIMER UI - OVERLAP FIX */
         #timer-screen { padding: 0; background: #050505; }
         .timer-bg {
             width: 100%; height: 100%;
             background: linear-gradient(to bottom, rgba(5, 10, 25, 0.6), rgba(0, 0, 5, 0.9)), url('https://images.unsplash.com/photo-1506744626753-14c1e33190fc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80') center/cover no-repeat;
             display: flex; flex-direction: column; align-items: center; 
-            overflow-y: auto; padding-bottom: 30px; 
+            overflow: hidden; padding: 20px 15px; box-sizing: border-box; position: relative;
         }
-        .timer-bg::-webkit-scrollbar { display: none; }
         
-        .timer-task-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; padding: 8px 25px; border-radius: 20px; font-size: 0.9rem; font-weight: 300; letter-spacing: 1px; margin-top: 30px; border: 1px solid rgba(255,255,255,0.2); }
+        /* Flex Stacking for Mobile */
+        .timer-task-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; padding: 6px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 300; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.2); z-index: 10; white-space: nowrap; max-width: 75%; overflow: hidden; text-overflow: ellipsis; margin-bottom: 10px; display: flex; justify-content: center; align-items: center; min-height: 30px; flex-shrink: 0;}
+        
+        .timer-settings-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 42px; height: 42px; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; cursor: pointer; color: white; z-index: 10; backdrop-filter: blur(10px); transition: 0.2s;}
+        .timer-settings-btn:active { transform: scale(0.9); }
 
-        .mode-toggle { display: flex; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-radius: 25px; padding: 5px; margin: 20px 0 10px 0; border: 1px solid rgba(255,255,255,0.1); }
+        .mode-toggle { display: flex; background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border-radius: 25px; padding: 5px; margin: 0 0 15px 0; border: 1px solid rgba(255,255,255,0.1); z-index: 10; flex-shrink: 0;}
         .mode-btn { border: none; background: transparent; padding: 8px 20px; border-radius: 20px; cursor: pointer; color: #ccc; font-weight: 600; transition: all 0.2s; font-size: 0.85rem;}
         .mode-btn.active { background: var(--primary); color: white; }
 
-        .svg-timer-container { position: relative; width: 65vw; height: 65vw; max-width: 320px; max-height: 320px; display: flex; justify-content: center; align-items: center; margin: 10px auto 5px auto; flex-shrink: 0; }
+        /* The flex:1 here prevents overlap by automatically absorbing remaining height */
+        .center-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; flex: 1; min-height: 0; }
+
+        /* Timer graphic scales down dynamically if vertical height is tight! */
+        .svg-timer-container { position: relative; width: min(65vw, 38vh); height: min(65vw, 38vh); max-width: 320px; max-height: 320px; display: flex; justify-content: center; align-items: center; margin: 0 auto 10px auto; flex-shrink: 1; }
+        
         .progress-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
         .progress-ring__ticks { stroke: rgba(255, 255, 255, 0.15); stroke-width: 10; stroke-dasharray: 2 10; fill: transparent; }
         .progress-ring__path { stroke: url(#gradient); stroke-width: 10; stroke-linecap: round; fill: transparent; transition: stroke-dashoffset 1s linear; }
         
-        /* ANTI-VIBRATION DIGIT BOXES */
         .digit { display: inline-block; width: 0.6em; text-align: center; }
         .colon { display: inline-block; width: 0.25em; text-align: center; transform: translateY(-0.05em); opacity: 0.9;}
-        
-        .timer-display-large { font-size: clamp(3.5rem, 16vw, 5rem); font-weight: 200; font-family: 'Poppins', sans-serif; color: white; letter-spacing: 0px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 2; line-height: 1; display: none; }
+        .timer-display-large { font-size: clamp(3rem, 16vw, 4.5rem); font-weight: 200; font-family: 'Poppins', sans-serif; color: white; letter-spacing: 0px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 2; line-height: 1; display: none; }
 
         .picker-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 180px; width: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; -ms-overflow-style: none; -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent); mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent); z-index: 5;}
         .picker-container::-webkit-scrollbar { display: none; }
@@ -103,27 +110,26 @@
         .picker-item.active { color: white; font-size: 3.5rem; font-weight: 300; text-shadow: 0 2px 10px rgba(255,255,255,0.3); }
         .picker-spacer { height: 60px; }
 
-        /* EXPECTED END TIME PREDICTOR */
-        .expected-end { font-size: 0.9rem; color: #a29bfe; font-weight: 400; letter-spacing: 0.5px; margin-bottom: 20px; text-align: center; height: 20px; transition: opacity 0.3s ease; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .expected-end { font-size: 0.85rem; color: #a29bfe; font-weight: 400; letter-spacing: 0.5px; margin-bottom: 15px; text-align: center; height: 18px; transition: opacity 0.3s ease; text-shadow: 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0;}
 
-        .scenic-play-btn { background: #ffffff; color: #000000; border: none; border-radius: 40px; padding: 16px 45px; font-size: 1.15rem; font-weight: 600; letter-spacing: 0px; cursor: pointer; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); margin-bottom: 20px; transition: 0.2s; flex-shrink: 0; display: flex; align-items: center; gap: 8px;}
+        .scenic-play-btn { background: #ffffff; color: #000000; border: none; border-radius: 40px; padding: 16px 45px; font-size: 1.15rem; font-weight: 600; cursor: pointer; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); transition: 0.2s; flex-shrink: 0; display: flex; align-items: center; gap: 8px; z-index: 5;}
         .scenic-play-btn:active { transform: scale(0.95); }
 
-        .glass-panel { background: rgba(0,0,0,0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; width: 90%; max-width: 350px; flex-shrink: 0;}
-        .glass-btn-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-        .glass-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 15px; cursor: pointer; }
-        .glass-btn.active { background: var(--primary); border-color: var(--primary); }
-        .glass-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px; border-radius: 10px; width: 50px; text-align: center; }
-        .glass-input::placeholder { color: rgba(255,255,255,0.5); }
-
-        .scenic-toolbar { display: flex; justify-content: space-around; width: 100%; padding: 15px 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); border-radius: 20px; width: 90%; max-width: 350px; margin-bottom: 20px; flex-shrink: 0;}
-        .st-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #ccc; font-size: 0.7rem; cursor: pointer; }
+        .scenic-toolbar { display: flex; justify-content: space-around; padding: 12px 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); border-radius: 20px; width: 90%; max-width: 350px; margin: 15px 0 0 0; z-index: 10; flex-shrink: 0;}
+        .st-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #ccc; font-size: 0.7rem; cursor: pointer; transition: 0.2s;}
         .st-icon { font-size: 1.4rem; color: white; opacity: 0.9;}
+
+        /* SETTINGS POPUP MODAL */
+        .settings-popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; width: 85%; max-width: 320px; z-index: 100; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        .glass-btn-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 5px;}
+        .glass-btn { background: var(--primary); border: 1px solid var(--primary); color: white; padding: 10px 20px; border-radius: 15px; font-weight: 600; cursor: pointer; }
+        .glass-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px; border-radius: 12px; width: 55px; text-align: center; font-size: 1.1rem;}
+        .glass-input::placeholder { color: rgba(255,255,255,0.5); font-size: 0.9rem;}
 
         /* STATS */
         .stats-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 20px;}
         .stats-container::-webkit-scrollbar { display: none; }
-        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 100%; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); flex-shrink: 0;}
+        .stat-card { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 100%; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); flex-shrink: 0; box-sizing: border-box;}
         
         .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .time-box { background: var(--bg-color); padding: 15px 10px; border-radius: 12px; }
@@ -172,31 +178,48 @@
         .cat-list-item { display: flex; justify-content: space-between; padding: 12px; background: var(--bg-color); margin-bottom: 8px; border-radius: 10px; align-items: center; font-weight: 600; font-size: 0.9rem;}
         .del-btn { background: #ff7675; color: white; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem;}
 
-        /* FULLSCREEN OVERLAY & FAKE LANDSCAPE FORCED ROTATION */
+        /* FULLSCREEN OVERLAY */
         #fs-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 9999; overflow: hidden; }
-        
         .fs-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        
         .fs-close { position: absolute; top: 15px; left: 15px; background: #262626; color: #fff; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10001;}
-        
         .fs-time { font-size: 55vh; color: transparent; -webkit-text-stroke: 3px #e0e0e0; font-family: 'Poppins', sans-serif; font-weight: 300; letter-spacing: 0px; line-height: 1; text-align: center; width: 100%; transition: font-size 0.3s ease; white-space: nowrap; display: flex; justify-content: center; align-items: center;}
         .fs-time.long-format { font-size: 45vh; }
-        
         .fs-pill { background: #262626; border-radius: 50px; display: flex; padding: 6px; gap: 10px; margin-top: 2vh; transition: all 0.3s; z-index: 10001;}
         .fs-btn-play { background: #ffffff; color: #000; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-left: 5px; transition: all 0.2s; }
         .fs-btn-play.paused { padding-left: 0; font-size: 1.1rem; } 
         .fs-btn-stop { background: #3d3d3d; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
         .fs-stop-icon { width: 12px; height: 12px; background-color: #ff8c00; border-radius: 3px; }
 
-        /* THE MAGIC: If the OS gets stuck in portrait, visually force it sideways! */
-        @media (orientation: portrait) {
-            .fs-wrapper {
-                top: 50%; left: 50%; width: 100vh; height: 100vw;
-                transform: translate(-50%, -50%) rotate(90deg);
-            }
-            .fs-time { font-size: 55vw; } 
-            .fs-time.long-format { font-size: 45vw; } 
-            .fs-pill { margin-top: 2vw; }
+        @media (orientation: portrait) and (max-width: 767px) {
+            .fs-wrapper { top: 50%; left: 50%; width: 100vh; height: 100vw; transform: translate(-50%, -50%) rotate(90deg); }
+            .fs-time { font-size: 55vw; } .fs-time.long-format { font-size: 45vw; } .fs-pill { margin-top: 2vw; }
+        }
+
+        /* ----------------------------------------------------
+           RESPONSIVE DESKTOP LAYOUT (Tablets & Laptops)
+           ---------------------------------------------------- */
+        @media (min-width: 768px) {
+            .app-layout { flex-direction: row; max-width: 1200px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin: 20px auto; height: calc(100vh - 40px); overflow: hidden; }
+            .bottom-nav { order: -1; flex-direction: column; justify-content: flex-start; padding-top: 40px; width: 100px; height: 100%; border-top: none; border-right: 1px solid var(--nav-border); }
+            .nav-item { width: 100%; padding: 20px 0; }
+            .screen { padding: 40px; }
+            .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-content: start; align-items: stretch; }
+            .stat-card { margin-bottom: 0; height: 100%; }
+            .stat-card:nth-child(3), .stat-card:nth-child(4), .stat-card:nth-child(5) { grid-column: span 2; }
+            .input-group { max-width: 600px; margin: 20px auto 0 auto; width: 100%; }
+            .task-container { max-width: 800px; margin: 0 auto; width: 100%; }
+
+            /* TIMER CORNER DOCKING (Restoring desktop absolutes) */
+            #timer-screen { padding: 0; }
+            .timer-bg { justify-content: center; padding: 0; }
+            .center-wrapper { flex: none; min-height: auto; }
+            .timer-task-pill { position: absolute; top: 30px; left: 40px; margin: 0; max-width: 30%; }
+            .mode-toggle { position: absolute; top: 30px; right: 40px; margin: 0; }
+            .timer-settings-btn { top: 85px; right: 40px; }
+            .settings-popup { top: 140px; right: 40px; left: auto; transform: none; margin: 0; }
+            .scenic-toolbar { position: absolute; bottom: 30px; right: 40px; left: auto; transform: none; width: auto; background: transparent; border: none; backdrop-filter: none; gap: 30px; padding: 0; margin: 0;}
+            .st-item:hover { color: white; }
+            .svg-timer-container { max-width: 400px; max-height: 400px; width: 400px; height: 400px; margin-bottom: 20px;}
         }
     </style>
 </head>
@@ -240,42 +263,45 @@
         <div class="timer-bg">
             <div id="active-task-display" class="timer-task-pill" style="opacity: 0;">Please select a task...</div>
             
+            <button id="timer-settings-btn" class="timer-settings-btn" onclick="toggleTimerSettings()" style="display:none;" title="Timer Settings">⚙️</button>
+
             <div class="mode-toggle">
                 <button id="mode-timer-btn" class="mode-btn active" onclick="setMode('timer')">Timer</button>
                 <button id="mode-stopwatch-btn" class="mode-btn" onclick="setMode('stopwatch')">Stopwatch</button>
             </div>
 
-            <div class="svg-timer-container">
-                <svg class="progress-ring" viewBox="0 0 300 300">
-                    <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#ff4757" />
-                            <stop offset="100%" stop-color="#ff6b81" />
-                        </linearGradient>
-                    </defs>
-                    <circle class="progress-ring__ticks" r="140" cx="150" cy="150"></circle>
-                    <circle id="progress-path" class="progress-ring__path" r="140" cx="150" cy="150" stroke-dasharray="879.64" stroke-dashoffset="0"></circle>
-                </svg>
-                
-                <div class="picker-container" id="minute-picker"></div>
-                <div id="time-display" class="timer-display-large"><span class="digit">2</span><span class="digit">5</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
-            </div>
-
-            <div id="expected-end-time" class="expected-end">🔔 Ends at --:--</div>
-            <div id="expected-duration" class="expected-end" style="margin-top: -15px; margin-bottom: 25px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s ease;"></div>
-
-            <button id="start-timer" class="scenic-play-btn" onclick="handlePlayPause()">▶ Start to Focus</button>
-
-            <div id="stopwatch-setup-container" class="glass-panel" style="display:none;">
-                <div style="font-size: 0.8rem; color: #ccc; text-align: center;">Set Custom Start Time</div>
+            <div id="stopwatch-setup-container" class="settings-popup" style="display:none;">
+                <span onclick="toggleTimerSettings()" style="position: absolute; top: 12px; right: 15px; color: #fff; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</span>
+                <div style="font-size: 0.95rem; color: #fff; font-weight: 600; text-align: center;">Custom Start Time</div>
                 <div class="glass-btn-row">
                     <input type="number" id="sw-h" class="glass-input" placeholder="Hr" min="0">
                     <input type="number" id="sw-m" class="glass-input" placeholder="Min" min="0" max="59">
                     <input type="number" id="sw-s" class="glass-input" placeholder="Sec" min="0" max="59">
                 </div>
-                <button class="glass-btn" onclick="setCustomStopwatch()" style="margin: 0 auto; width: fit-content;">Apply Start Time</button>
+                <button class="glass-btn" onclick="setCustomStopwatch()" style="margin: 0 auto; width: fit-content;">Apply</button>
             </div>
-            
+
+            <div class="center-wrapper">
+                <div class="svg-timer-container">
+                    <svg class="progress-ring" viewBox="0 0 300 300">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#ff4757" />
+                                <stop offset="100%" stop-color="#ff6b81" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-ring__ticks" r="140" cx="150" cy="150"></circle>
+                        <circle id="progress-path" class="progress-ring__path" r="140" cx="150" cy="150" stroke-dasharray="879.64" stroke-dashoffset="0"></circle>
+                    </svg>
+                    
+                    <div class="picker-container" id="minute-picker"></div>
+                    <div id="time-display" class="timer-display-large"><span class="digit">2</span><span class="digit">5</span><span class="colon">:</span><span class="digit">0</span><span class="digit">0</span></div>
+                </div>
+
+                <div id="expected-end-time" class="expected-end">🔔 Ends at --:--</div>
+                <button id="start-timer" class="scenic-play-btn" onclick="handlePlayPause()">▶ Start to Focus</button>
+            </div>
+
             <div class="scenic-toolbar">
                 <div class="st-item" onclick="openFullscreen()"><span class="st-icon">🔲</span>Fullscreen</div>
                 <div class="st-item" onclick="handleReset()"><span class="st-icon">🔄</span>Reset Timer</div>
@@ -366,16 +392,11 @@
     let wakeLock = null;
     async function requestWakeLock() {
         if ('wakeLock' in navigator) {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                console.log('Screen Wake Lock active');
-                wakeLock.addEventListener('release', () => { console.log('Screen Wake Lock released'); });
-            } catch (err) { console.error(`${err.name}, ${err.message}`); }
+            try { wakeLock = await navigator.wakeLock.request('screen'); } 
+            catch (err) { console.error(`${err.name}, ${err.message}`); }
         }
     }
-    function releaseWakeLock() {
-        if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
-    }
+    function releaseWakeLock() { if (wakeLock !== null) { wakeLock.release(); wakeLock = null; } }
 
     let tasks = JSON.parse(localStorage.getItem('megaTasks')) || [];
     let userCategories = JSON.parse(localStorage.getItem('userCategories'));
@@ -391,7 +412,6 @@
     if(!dailyRecords[todayStr]) dailyRecords[todayStr] = 0;
     let sessionStartTime = null; let currentCalDate = new Date(); const DAILY_GOAL_SECONDS = 3 * 3600;
 
-    // ----- NEW: STATE SAVING LOGIC -----
     let isStopwatchMode = false; let stopwatchTime = 0; let currentInterval = 25; let timeLeft = currentInterval * 60; let timerId = null; let customStopwatchStart = 0; 
     
     function saveTimerState() {
@@ -408,27 +428,21 @@
         localStorage.setItem('timerState', JSON.stringify(state));
     }
 
-    // Save exact state right before browser clears memory or app is hidden
     window.addEventListener('beforeunload', saveTimerState);
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             if (timerId !== null) saveTimerState();
         } else if (document.visibilityState === 'visible') {
-            if (timerId !== null) { 
-                requestWakeLock(); 
-            }
+            if (timerId !== null) { requestWakeLock(); }
             const overlay = document.getElementById('fs-overlay');
             if (overlay && overlay.style.display === 'flex') {
-                if (screen.orientation && screen.orientation.lock) { 
-                    screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped"));
-                }
+                if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped")); }
             }
         }
     });
 
     function renderCategoryOptions() {
-        const select = document.getElementById('category-input');
-        select.innerHTML = '';
+        const select = document.getElementById('category-input'); select.innerHTML = '';
         userCategories.forEach(c => { select.innerHTML += `<option value="${c}">📌 ${c}</option>`; });
         select.innerHTML += `<option value="custom">✨ Add New Title...</option>`;
     }
@@ -449,8 +463,7 @@
 
     window.deleteCat = (index) => {
         if(confirm(`Are you sure you want to delete "${userCategories[index]}"?`)) {
-            userCategories.splice(index, 1);
-            localStorage.setItem('userCategories', JSON.stringify(userCategories));
+            userCategories.splice(index, 1); localStorage.setItem('userCategories', JSON.stringify(userCategories));
             renderCategoryOptions(); renderCatList();
             const select = document.getElementById('category-input');
             if (userCategories.length > 0) select.value = userCategories[0]; else select.value = 'custom';
@@ -462,80 +475,44 @@
     function formatTimeDisplay(secs) { const h = Math.floor(secs / 3600); const m = Math.floor((secs % 3600) / 60); return `${h}h ${m}m`; }
 
     function getDaysOfCurrentWeek() {
-        const now = new Date();
-        const currentDay = now.getDay(); 
-        const diffToMonday = currentDay === 0 ? 6 : currentDay - 1; 
-        let weekDates = [];
-        for(let i=0; i<7; i++) {
-            let d = new Date(now);
-            d.setDate(now.getDate() - diffToMonday + i);
-            weekDates.push(d.toLocaleDateString('en-CA'));
-        }
-        return weekDates; 
+        const now = new Date(); const currentDay = now.getDay(); const diffToMonday = currentDay === 0 ? 6 : currentDay - 1; let weekDates = [];
+        for(let i=0; i<7; i++) { let d = new Date(now); d.setDate(now.getDate() - diffToMonday + i); weekDates.push(d.toLocaleDateString('en-CA')); } return weekDates; 
     }
 
     function updateLeaderboard() {
-        const weekDates = getDaysOfCurrentWeek();
-        let weekData = [];
-        weekDates.forEach(dateStr => {
-            if(dailyRecords[dateStr] && dailyRecords[dateStr] > 0) {
-                weekData.push({ date: dateStr, secs: dailyRecords[dateStr] });
-            }
-        });
-        
-        weekData.sort((a, b) => b.secs - a.secs);
-        const top3 = weekData.slice(0, 3);
-        const container = document.getElementById('leaderboard-list');
-        container.innerHTML = '';
-        
-        if(top3.length === 0) {
-            container.innerHTML = '<div style="opacity:0.5; font-size:0.85rem; text-align:center;">No study data yet this week.</div>';
-            return;
-        }
-
+        const weekDates = getDaysOfCurrentWeek(); let weekData = [];
+        weekDates.forEach(dateStr => { if(dailyRecords[dateStr] && dailyRecords[dateStr] > 0) { weekData.push({ date: dateStr, secs: dailyRecords[dateStr] }); } });
+        weekData.sort((a, b) => b.secs - a.secs); const top3 = weekData.slice(0, 3); const container = document.getElementById('leaderboard-list'); container.innerHTML = '';
+        if(top3.length === 0) { container.innerHTML = '<div style="opacity:0.5; font-size:0.85rem; text-align:center;">No study data yet this week.</div>'; return; }
         const medals = ['🥇', '🥈', '🥉'];
         top3.forEach((item, index) => {
-            const dateObj = new Date(item.date);
-            const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
-            const timeStr = formatTimeDisplay(item.secs);
-            container.innerHTML += `
-                <div class="lb-item">
-                    <div class="lb-rank">${medals[index]} ${dayName}</div>
-                    <div class="lb-time">${timeStr}</div>
-                </div>
-            `;
+            const dateObj = new Date(item.date); const dayName = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }); const timeStr = formatTimeDisplay(item.secs);
+            container.innerHTML += `<div class="lb-item"><div class="lb-rank">${medals[index]} ${dayName}</div><div class="lb-time">${timeStr}</div></div>`;
         });
     }
 
     function updateAnalyticsDisplay() {
         const todaySecs = dailyRecords[todayStr] || 0;
-        document.getElementById('home-time-badge').innerText = `⏱️ Today: ${formatTimeDisplay(todaySecs)}`;
-        document.getElementById('stats-total-time').innerText = formatTimeDisplay(todaySecs);
-        let yest = new Date(); yest.setDate(yest.getDate() - 1);
-        document.getElementById('stats-yest-time').innerText = formatTimeDisplay(dailyRecords[yest.toLocaleDateString('en-CA')] || 0);
+        document.getElementById('home-time-badge').innerText = `⏱️ Today: ${formatTimeDisplay(todaySecs)}`; document.getElementById('stats-total-time').innerText = formatTimeDisplay(todaySecs);
+        let yest = new Date(); yest.setDate(yest.getDate() - 1); document.getElementById('stats-yest-time').innerText = formatTimeDisplay(dailyRecords[yest.toLocaleDateString('en-CA')] || 0);
         let weekTotal = 0; for(let i=0; i<7; i++) { let d = new Date(); d.setDate(d.getDate() - i); weekTotal += (dailyRecords[d.toLocaleDateString('en-CA')] || 0); }
-        document.getElementById('stats-week-time').innerText = formatTimeDisplay(weekTotal);
-        updateLeaderboard(); 
+        document.getElementById('stats-week-time').innerText = formatTimeDisplay(weekTotal); updateLeaderboard(); 
     }
 
     function renderCalendar() {
         const year = currentCalDate.getFullYear(); const month = currentCalDate.getMonth();
         const firstDayIndex = new Date(year, month, 1).getDay(); const startDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1; 
         const daysInMonth = new Date(year, month + 1, 0).getDate(); const prevMonthDays = new Date(year, month, 0).getDate();
-        let focusDays = 0; let goalDays = 0; let daysHtml = '';
-        const dayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+        let focusDays = 0; let goalDays = 0; let daysHtml = ''; const dayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
         dayNames.forEach(d => { daysHtml += `<div class="cal-day-name">${d}</div>`; });
         for(let i = startDay - 1; i >= 0; i--) { daysHtml += `<div class="cal-cell empty"><span class="cal-date">${prevMonthDays - i}</span></div>`; }
         for(let i = 1; i <= daysInMonth; i++) {
             let dStr = `${year}-${String(month+1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             let secs = dailyRecords[dStr] || 0; let isToday = (dStr === todayStr) ? 'today' : '';
             if (secs > 0) {
-                focusDays++; if (secs >= DAILY_GOAL_SECONDS) goalDays++;
-                let pct = Math.min(100, (secs / DAILY_GOAL_SECONDS) * 100);
+                focusDays++; if (secs >= DAILY_GOAL_SECONDS) goalDays++; let pct = Math.min(100, (secs / DAILY_GOAL_SECONDS) * 100);
                 daysHtml += `<div class="cal-cell ${isToday}" onclick="showDailyDetail('${dStr}')" style="cursor:pointer;"><div class="cal-ring" style="background: conic-gradient(#ff4757 ${pct}%, transparent 0);"></div><div class="cal-ring-inner"></div><span class="cal-date">${i}</span></div>`;
-            } else { 
-                daysHtml += `<div class="cal-cell ${isToday}" onclick="showDailyDetail('${dStr}')" style="cursor:pointer;"><span class="cal-date">${i}</span></div>`; 
-            }
+            } else { daysHtml += `<div class="cal-cell ${isToday}" onclick="showDailyDetail('${dStr}')" style="cursor:pointer;"><span class="cal-date">${i}</span></div>`; }
         }
         const totalCells = startDay + daysInMonth; const remaining = (Math.ceil(totalCells / 7) * 7) - totalCells;
         for(let i = 1; i <= remaining; i++) { daysHtml += `<div class="cal-cell empty"><span class="cal-date">${i}</span></div>`; }
@@ -548,14 +525,9 @@
     window.changeMonth = (dir) => { currentCalDate.setMonth(currentCalDate.getMonth() + dir); renderCalendar(); }
 
     window.showDailyDetail = (dateStr) => {
-        const detailModal = document.getElementById('detail-modal');
-        const totalSecs = dailyRecords[dateStr] || 0;
-        const timeStr = formatTimeDisplay(totalSecs);
-        const dateObj = new Date(dateStr);
+        const detailModal = document.getElementById('detail-modal'); const totalSecs = dailyRecords[dateStr] || 0; const timeStr = formatTimeDisplay(totalSecs); const dateObj = new Date(dateStr);
         const formattedDate = dateObj.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
-        document.getElementById('detail-date-title').innerText = formattedDate;
-        document.getElementById('detail-time-value').innerText = timeStr;
-        detailModal.style.display = 'flex';
+        document.getElementById('detail-date-title').innerText = formattedDate; document.getElementById('detail-time-value').innerText = timeStr; detailModal.style.display = 'flex';
     };
 
     function renderHistory() {
@@ -584,14 +556,22 @@
         document.getElementById(`${tabName}-screen`).classList.add('active');
         let navIndex = { 'home': 0, 'add': 1, 'timer': 2, 'stats': 3 }[tabName];
         document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+        
         if(tabName === 'add' && event && event.currentTarget.classList.contains('nav-item')) { resetAddForm(); }
         if(tabName === 'stats') { updateStats(); updateAnalyticsDisplay(); renderHistory(); renderCalendar(); }
+        
+        // Safely force scroll picker without glitching
+        if(tabName === 'timer') {
+            const picker = document.getElementById('minute-picker');
+            if (picker && !timerId && !isStopwatchMode) {
+                setTimeout(() => { picker.scrollTop = (currentInterval - 1) * 60; }, 10);
+            }
+        }
     }
 
     function resetAddForm() { 
         editingIndex = null; document.getElementById('add-header').innerText = "New Target"; 
-        document.getElementById('task-input').value = ''; document.getElementById('subtasks-input').value = ''; 
-        document.getElementById('repeat-input').checked = false; document.getElementById('add-btn').innerText = "Add to Plan"; 
+        document.getElementById('task-input').value = ''; document.getElementById('subtasks-input').value = ''; document.getElementById('repeat-input').checked = false; document.getElementById('add-btn').innerText = "Add to Plan"; 
         const select = document.getElementById('category-input'); if (userCategories.length > 0) select.value = userCategories[0]; else select.value = 'custom';
         document.getElementById('custom-category-input').style.display = 'none'; document.getElementById('custom-category-input').value = '';
     }
@@ -610,8 +590,7 @@
         editingIndex = i; const t = tasks[i]; document.getElementById('task-input').value = t.text; 
         const catSelect = document.getElementById('category-input');
         if(!Array.from(catSelect.options).some(opt => opt.value === t.category)) { userCategories.push(t.category); localStorage.setItem('userCategories', JSON.stringify(userCategories)); renderCategoryOptions(); }
-        catSelect.value = t.category; document.getElementById('repeat-input').checked = t.repeat || false; 
-        document.getElementById('subtasks-input').value = t.subtasks ? t.subtasks.map(s=>s.text).join('\n') : ''; 
+        catSelect.value = t.category; document.getElementById('repeat-input').checked = t.repeat || false; document.getElementById('subtasks-input').value = t.subtasks ? t.subtasks.map(s=>s.text).join('\n') : ''; 
         document.getElementById('add-header').innerText = "Edit Target"; document.getElementById('add-btn').innerText = "Save Changes"; 
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('add-screen').classList.add('active'); document.querySelectorAll('.nav-item')[1].classList.add('active'); 
     };
@@ -641,13 +620,13 @@
         html += '<div class="picker-spacer"></div>';
         pickerContainer.innerHTML = html;
 
-        pickerContainer.addEventListener('scroll', () => {
+        function updateSelection() {
             let index = Math.round(pickerContainer.scrollTop / 60);
             document.querySelectorAll('.picker-item').forEach((el, i) => {
                 if(i === index) {
                     el.classList.add('active');
                     if (!timerId && !isStopwatchMode) { 
-                        currentInterval = parseInt(el.getAttribute('data-val'));
+                        currentInterval = parseInt(el.getAttribute('data-val')) || 25;
                         timeLeft = currentInterval * 60;
                         updateSvgProgress(true);
                         updateDisplayFormat(timeLeft);
@@ -655,8 +634,10 @@
                     }
                 } else { el.classList.remove('active'); }
             });
-        });
-        setTimeout(() => { pickerContainer.scrollTop = (25 - 1) * 60; }, 100);
+        }
+
+        pickerContainer.addEventListener('scroll', updateSelection);
+        setTimeout(() => { pickerContainer.scrollTop = (25 - 1) * 60; updateSelection(); }, 250);
     }
     initPicker();
 
@@ -676,11 +657,19 @@
         }
     }
 
+    window.toggleTimerSettings = () => {
+        const panel = document.getElementById('stopwatch-setup-container');
+        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    };
+
     window.setMode = (mode) => { 
         isStopwatchMode = (mode === 'stopwatch'); 
         document.getElementById('mode-timer-btn').classList.toggle('active', !isStopwatchMode); 
         document.getElementById('mode-stopwatch-btn').classList.toggle('active', isStopwatchMode); 
-        document.getElementById('stopwatch-setup-container').style.display = isStopwatchMode ? 'flex' : 'none'; 
+        
+        document.getElementById('timer-settings-btn').style.display = isStopwatchMode ? 'flex' : 'none';
+        document.getElementById('stopwatch-setup-container').style.display = 'none';
+        
         if(timerId) { handleReset(); } 
         if(isStopwatchMode) { stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); } 
         else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } 
@@ -701,54 +690,26 @@
         let html = text.split('').map(c => c === ':' ? `<span class="colon">:</span>` : `<span class="digit">${c}</span>`).join('');
         timeDisplay.innerHTML = html; fsTimeDisplay.innerHTML = html;
 
-        if (text.length >= 8) {
-            fsTimeDisplay.classList.add('long-format');
-        } else {
-            fsTimeDisplay.classList.remove('long-format');
-        }
+        if (text.length >= 8) { fsTimeDisplay.classList.add('long-format'); } else { fsTimeDisplay.classList.remove('long-format'); }
 
         const endEl = document.getElementById('expected-end-time');
-        const durEl = document.getElementById('expected-duration');
         if (endEl) {
             if (!isStopwatchMode && totalSeconds > 0) {
-                let d = new Date();
-                d.setSeconds(d.getSeconds() + totalSeconds);
-                let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                endEl.innerText = `🔔 Ends at ${timeStr}`;
-                endEl.style.opacity = '1';
-                
-                if (durEl) {
-                    let durStr = hours > 0 ? `${hours} hr ${mins} min` : `${mins} min`;
-                    durEl.innerText = `⏳ Total Time: ${durStr}`;
-                    durEl.style.opacity = '0.8';
-                }
-            } else {
-                endEl.style.opacity = '0';
-                if(durEl) durEl.style.opacity = '0';
-            }
+                let d = new Date(); d.setSeconds(d.getSeconds() + totalSeconds); let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                endEl.innerText = `🔔 Ends at ${timeStr}`; endEl.style.opacity = '1';
+            } else { endEl.style.opacity = '0'; }
         }
     }
 
-    setInterval(() => {
-        if (!timerId && !isStopwatchMode && !document.hidden) {
-            updateDisplayFormat(timeLeft);
-        }
-    }, 1000);
+    setInterval(() => { if (!timerId && !isStopwatchMode && !document.hidden) { updateDisplayFormat(timeLeft); } }, 1000);
 
     function updateSvgProgress(instant = false) {
-        if (instant) {
-            progressPath.style.transition = 'none';
-        } else {
-            progressPath.style.transition = 'stroke-dashoffset 1s linear';
-        }
-        
+        if (instant) { progressPath.style.transition = 'none'; } else { progressPath.style.transition = 'stroke-dashoffset 1s linear'; }
         if(isStopwatchMode) {
-            let pct = (stopwatchTime % 60) / 60;
-            if (pct === 0 && stopwatchTime > 0 && !instant) { progressPath.style.transition = 'none'; }
+            let pct = (stopwatchTime % 60) / 60; if (pct === 0 && stopwatchTime > 0 && !instant) { progressPath.style.transition = 'none'; }
             progressPath.style.strokeDashoffset = circumference - ((stopwatchTime / 60) * circumference);
         } else {
-            let pct = timeLeft / (currentInterval * 60);
-            progressPath.style.strokeDashoffset = circumference - (pct * circumference);
+            let pct = timeLeft / (currentInterval * 60); progressPath.style.strokeDashoffset = circumference - (pct * circumference);
         }
     }
     
@@ -757,7 +718,7 @@
         let h = parseInt(document.getElementById('sw-h').value) || 0; let m = parseInt(document.getElementById('sw-m').value) || 0; let s = parseInt(document.getElementById('sw-s').value) || 0;
         customStopwatchStart = (h * 3600) + (m * 60) + s; stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); updateSvgProgress(true); updateTimerUIState();
         document.getElementById('sw-h').value = ''; document.getElementById('sw-m').value = ''; document.getElementById('sw-s').value = '';
-        saveTimerState();
+        toggleTimerSettings(); saveTimerState();
     };
 
     function recordSession() {
@@ -775,56 +736,33 @@
         const fsBtn = document.getElementById('fs-play-btn');
 
         if (timerId) { 
-            releaseWakeLock();
-            clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused');
-            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); recordSession(); renderCalendar(); updateTimerUIState();
-            saveTimerState();
+            releaseWakeLock(); clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused');
+            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); recordSession(); renderCalendar(); updateTimerUIState(); saveTimerState();
         } else { 
-            requestWakeLock();
-            fsBtn.innerHTML = '⏸'; fsBtn.classList.add('paused'); 
+            requestWakeLock(); fsBtn.innerHTML = '⏸'; fsBtn.classList.add('paused'); 
             if (!isResuming) sessionStartTime = new Date(); 
             if(!isStopwatchMode && timeLeft === currentInterval * 60) { updateDisplayFormat(timeLeft); }
             updateSvgProgress(true);
             
-            let lastTick = Date.now();
-            saveTimerState(); 
-            
+            let lastTick = Date.now(); saveTimerState(); 
             timerId = setInterval(() => { 
-                let now = Date.now();
-                let delta = Math.floor((now - lastTick) / 1000); 
+                let now = Date.now(); let delta = Math.floor((now - lastTick) / 1000); 
                 
                 if (delta >= 1) {
-                    lastTick += delta * 1000;
-                    
-                    dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + delta;
-                    if (dailyRecords[todayStr] % 60 === 0) {
-                        localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
-                        if (!document.hidden) updateAnalyticsDisplay(); 
-                    }
-
-                    // Save backup state every 10 seconds just in case of sudden crash
-                    if (dailyRecords[todayStr] % 10 === 0) {
-                        saveTimerState();
-                    }
+                    lastTick += delta * 1000; dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + delta;
+                    if (dailyRecords[todayStr] % 60 === 0) { localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); if (!document.hidden) updateAnalyticsDisplay(); }
+                    if (dailyRecords[todayStr] % 10 === 0) { saveTimerState(); }
 
                     if (isStopwatchMode) { 
-                        stopwatchTime += delta; 
-                        if (!document.hidden) { updateDisplayFormat(stopwatchTime); updateSvgProgress(false); }
+                        stopwatchTime += delta; if (!document.hidden) { updateDisplayFormat(stopwatchTime); updateSvgProgress(false); }
                     } else { 
                         timeLeft -= delta; 
                         if (timeLeft <= 0) { 
-                            timeLeft = 0;
-                            releaseWakeLock(); 
-                            clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); playAlarm(); 
-                            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); 
-                            if (!document.hidden) updateAnalyticsDisplay(); 
-                            recordSession(); renderCalendar();
+                            timeLeft = 0; releaseWakeLock(); clearInterval(timerId); timerId = null; fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); playAlarm(); 
+                            localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords)); if (!document.hidden) updateAnalyticsDisplay(); recordSession(); renderCalendar();
                             if(linkedTaskIndex !== null && !tasks[linkedTaskIndex].completed) { if(confirm(`Session complete! Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } } else alert("Session complete! Time for a break."); 
-                            linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); updateTimerUIState();
-                            saveTimerState();
-                        } else {
-                            if (!document.hidden) { updateDisplayFormat(timeLeft); updateSvgProgress(false); }
-                        }
+                            linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); updateTimerUIState(); saveTimerState();
+                        } else { if (!document.hidden) { updateDisplayFormat(timeLeft); updateSvgProgress(false); } }
                     } 
                 }
             }, 1000); 
@@ -837,26 +775,19 @@
         if(timerId) { clearInterval(timerId); timerId = null; const fsBtn = document.getElementById('fs-play-btn'); fsBtn.innerHTML = '▶'; fsBtn.classList.remove('paused'); recordSession(); renderCalendar(); }
         if (isStopwatchMode) { stopwatchTime = customStopwatchStart; updateDisplayFormat(stopwatchTime); } 
         else { timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); } 
-        updateSvgProgress(true); linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; updateTimerUIState();
-        saveTimerState();
+        updateSvgProgress(true); linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; updateTimerUIState(); saveTimerState();
     };
     
     updateTimerUIState();
 
     window.openFullscreen = () => { 
-        const overlay = document.getElementById('fs-overlay'); 
-        overlay.style.display = 'block'; 
-        if (document.documentElement.requestFullscreen && !document.fullscreenElement) { 
-            document.documentElement.requestFullscreen().catch(e => console.log(e)); 
-        } 
-        if (screen.orientation && screen.orientation.lock) { 
-            screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped")); 
-        }
+        const overlay = document.getElementById('fs-overlay'); overlay.style.display = 'block'; 
+        if (document.documentElement.requestFullscreen && !document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e => console.log(e)); } 
+        if (screen.orientation && screen.orientation.lock) { screen.orientation.lock('landscape').catch(e => console.log("Native lock skipped")); }
     };
 
     window.closeFullscreen = () => { 
-        const overlay = document.getElementById('fs-overlay'); 
-        overlay.style.display = 'none'; 
+        const overlay = document.getElementById('fs-overlay'); overlay.style.display = 'none'; 
         if (document.fullscreenElement) { document.exitFullscreen().catch(e => console.log(e)); } 
         if (screen.orientation && screen.orientation.unlock) { screen.orientation.unlock(); } 
     };
@@ -881,86 +812,54 @@
     document.getElementById('cat-close').onclick = () => { document.getElementById('cat-modal').style.display = 'none'; };
     document.getElementById('detail-close').onclick = () => { document.getElementById('detail-modal').style.display = 'none'; };
     window.onclick = function(event) {
-        const catModal = document.getElementById('cat-modal');
-        const detailModal = document.getElementById('detail-modal');
+        const catModal = document.getElementById('cat-modal'); const detailModal = document.getElementById('detail-modal');
         if (event.target === catModal) { catModal.style.display = 'none'; }
         if (event.target === detailModal) { detailModal.style.display = 'none'; }
     }
 
-    // ----- NEW: BOOT RECOVERY -----
     function restoreTimerState() {
         const savedStr = localStorage.getItem('timerState');
         if (!savedStr) return;
         try {
             const saved = JSON.parse(savedStr);
-            isStopwatchMode = saved.isStopwatchMode;
-            currentInterval = saved.currentInterval;
-            linkedTaskIndex = saved.linkedTaskIndex;
+            isStopwatchMode = saved.isStopwatchMode; currentInterval = saved.currentInterval; linkedTaskIndex = saved.linkedTaskIndex;
             if (saved.sessionStartTime) sessionStartTime = new Date(saved.sessionStartTime);
             
-            document.getElementById('mode-timer-btn').classList.toggle('active', !isStopwatchMode);
-            document.getElementById('mode-stopwatch-btn').classList.toggle('active', isStopwatchMode);
-            document.getElementById('stopwatch-setup-container').style.display = isStopwatchMode ? 'flex' : 'none';
+            document.getElementById('mode-timer-btn').classList.toggle('active', !isStopwatchMode); document.getElementById('mode-stopwatch-btn').classList.toggle('active', isStopwatchMode);
+            document.getElementById('timer-settings-btn').style.display = isStopwatchMode ? 'flex' : 'none'; document.getElementById('stopwatch-setup-container').style.display = 'none';
             
             if (linkedTaskIndex !== null && tasks[linkedTaskIndex]) {
-                const pill = document.getElementById('active-task-display');
-                pill.style.opacity = '1';
-                pill.innerText = `🎯 Focusing on: ${tasks[linkedTaskIndex].text}`;
+                const pill = document.getElementById('active-task-display'); pill.style.opacity = '1'; pill.innerText = `🎯 Focusing on: ${tasks[linkedTaskIndex].text}`;
             }
 
             if (saved.isRunning) {
-                let now = Date.now();
-                let deltaSecs = Math.floor((now - saved.lastTick) / 1000);
-                if (deltaSecs < 0) deltaSecs = 0;
-
-                dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + deltaSecs;
-                localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
+                let now = Date.now(); let deltaSecs = Math.floor((now - saved.lastTick) / 1000); if (deltaSecs < 0) deltaSecs = 0;
+                dailyRecords[todayStr] = (dailyRecords[todayStr] || 0) + deltaSecs; localStorage.setItem('dailyRecords', JSON.stringify(dailyRecords));
 
                 if (isStopwatchMode) {
                     stopwatchTime = saved.stopwatchTime + deltaSecs;
                 } else {
                     timeLeft = saved.timeLeft - deltaSecs;
                     if (timeLeft <= 0) {
-                        timeLeft = 0;
-                        updateDisplayFormat(0);
-                        updateSvgProgress(true);
-                        playAlarm();
+                        timeLeft = 0; updateDisplayFormat(0); updateSvgProgress(true); playAlarm();
                         if(linkedTaskIndex !== null && tasks[linkedTaskIndex] && !tasks[linkedTaskIndex].completed) { 
-                            if(confirm(`Welcome back! Your session completed while you were away. Did you finish "${tasks[linkedTaskIndex].text}"?`)) { 
-                                tasks[linkedTaskIndex].completed = true; renderTasks(); 
-                            } 
+                            if(confirm(`Welcome back! Your session completed while you were away. Did you finish "${tasks[linkedTaskIndex].text}"?`)) { tasks[linkedTaskIndex].completed = true; renderTasks(); } 
                         } else alert("Welcome back! Your session completed while you were away.");
-                        linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; 
-                        timeLeft = currentInterval * 60; 
-                        updateDisplayFormat(timeLeft); 
-                        updateSvgProgress(true);
-                        saveTimerState();
-                        updateTimerUIState();
-                        return; 
+                        linkedTaskIndex = null; document.getElementById('active-task-display').style.opacity = '0'; timeLeft = currentInterval * 60; updateDisplayFormat(timeLeft); updateSvgProgress(true); saveTimerState(); updateTimerUIState(); return; 
                     }
                 }
                 
-                updateDisplayFormat(isStopwatchMode ? stopwatchTime : timeLeft);
-                updateSvgProgress(true);
-                handlePlayPause(true); // resume silently without wiping start time
+                updateDisplayFormat(isStopwatchMode ? stopwatchTime : timeLeft); updateSvgProgress(true); handlePlayPause(true); 
             } else {
-                timeLeft = saved.timeLeft;
-                stopwatchTime = saved.stopwatchTime;
-                updateDisplayFormat(isStopwatchMode ? stopwatchTime : timeLeft);
-                updateSvgProgress(true);
+                timeLeft = saved.timeLeft; stopwatchTime = saved.stopwatchTime;
+                updateDisplayFormat(isStopwatchMode ? stopwatchTime : timeLeft); updateSvgProgress(true);
             }
             updateTimerUIState();
-        } catch (e) {
-            console.error("State restore failed", e);
-        }
+        } catch (e) { console.error("State restore failed", e); }
     }
 
     renderTasks();
-    restoreTimerState(); // Run check on boot!
+    restoreTimerState();
 </script>
 </body>
 </html>
-
-
-
-
